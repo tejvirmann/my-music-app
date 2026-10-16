@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, View } from 'react-native';
 import TrackPlayer, { Event, useActiveTrack, type Track } from 'react-native-track-player';
 
-import { PlaylistPicker } from '../components/PlaylistPicker';
-import { Btn, Empty, Row, s } from '../components/ui';
+import { PlaylistPicker } from '../ui/PlaylistPicker';
+import { Btn, Empty, Row, s } from '../ui';
 import { clearQueue, moveInQueue, removeFromQueue } from '../player/queue';
 
 export function QueueScreen() {

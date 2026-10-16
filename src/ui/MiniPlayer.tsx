@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import TrackPlayer, { State, useActiveTrack, usePlaybackState } from 'react-native-track-player';
 
-import { colors } from './ui';
+import { colors } from '.';
 
 export function MiniPlayer({ onOpen }: { onOpen: () => void }) {
   const track = useActiveTrack();

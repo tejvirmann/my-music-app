@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FlatList, View } from 'react-native';
 
-import { PlaylistPicker } from '../components/PlaylistPicker';
-import { Btn, Empty, Row, s } from '../components/ui';
+import { PlaylistPicker } from '../ui/PlaylistPicker';
+import { Btn, Empty, Row, s } from '../ui';
+import { useDownloadedTracks } from '../downloads';
 import { addToQueue, playNext, playNow } from '../player/queue';
 import { useAuth } from '../state/auth';
 import type { JfItem } from '../api/types';
@@ -14,6 +15,7 @@ export function AlbumScreen({ route }: any) {
   const { data, isLoading, error } = useQuery({ queryKey: ['album', id], queryFn: () => client.albumTracks(id) });
   const [pick, setPick] = useState<string[] | null>(null);
   const tracks = data?.Items ?? [];
+  const dlTracks = useDownloadedTracks();
 
   if (isLoading) return <Empty loading />;
   if (error) return <Empty error={(error as Error).message} />;
@@ -36,7 +38,7 @@ export function AlbumScreen({ route }: any) {
       </View>
       <FlatList data={tracks} keyExtractor={(t) => t.Id}
         renderItem={({ item, index }) => (
-          <Row title={`${item.IndexNumber ?? index + 1}. ${item.Name}`} onPress={() => playNow(client, tracks, index)} right={trackMenu(item)} />
+          <Row title={`${item.IndexNumber ?? index + 1}. ${item.Name}`} downloaded={dlTracks.has(item.Id)} onSwipeRight={() => addToQueue(client, [item])} onPress={() => playNow(client, tracks, index)} right={trackMenu(item)} />
         )} />
       <PlaylistPicker visible={!!pick} trackIds={pick ?? []} onClose={() => setPick(null)} />
     </View>

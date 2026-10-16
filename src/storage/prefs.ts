@@ -11,3 +11,12 @@ export function setHiddenPlaylists(ids: string[]) {
 
 export const getLastServerUrl = (): string => Storage.getItemSync('lastServerUrl') ?? '';
 export const setLastServerUrl = (u: string) => Storage.setItemSync('lastServerUrl', u);
+
+/** Pinned playlists (local-only, shown first in Library, in pin order). */
+export function getPinnedPlaylists(): string[] {
+  const raw = Storage.getItemSync('pinnedPlaylistIds');
+  return raw ? JSON.parse(raw) : [];
+}
+export function setPinnedPlaylists(ids: string[]) {
+  Storage.setItemSync('pinnedPlaylistIds', JSON.stringify(ids));
+}

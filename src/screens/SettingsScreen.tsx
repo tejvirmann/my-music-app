@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Text, View } from 'react-native';
 import TrackPlayer from 'react-native-track-player';
 
-import { Btn, s } from '../components/ui';
+import { Btn, s } from '../ui';
 import { totalBytes } from '../downloads';
 import { useAuth } from '../state/auth';
 

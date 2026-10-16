@@ -1,44 +1,29 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Alert, FlatList, Text, View } from 'react-native';
 
-import { Btn, Empty, Row, s } from '../components/ui';
-import { downloadPlaylist, isPlaylistDownloaded, removePlaylistDownload } from '../downloads';
+import { Btn, Empty, Row, s } from '../ui';
+import { toggleDownload } from '../downloadActions';
+import { useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
 import { addToQueue, playNext, playNow } from '../player/queue';
 import { useAuth } from '../state/auth';
 
-export function PlaylistScreen({ route, navigation }: any) {
+export function PlaylistScreen({ route }: any) {
   const client = useAuth((a) => a.client)!;
   const qc = useQueryClient();
   const { id } = route.params;
   const key = ['playlist', id];
   const { data, isLoading, error } = useQuery({ queryKey: key, queryFn: () => client.playlistTracks(id) });
   const tracks = data?.Items ?? [];
-  const [progress, setProgress] = useState<string>();
-  const [downloaded, setDownloaded] = useState<boolean | null>(null);
-  const isDl = downloaded ?? isPlaylistDownloaded(id, tracks.map((t) => t.Id));
+  const progress = useDownloadProgress(id);
+  const dlPlaylists = useDownloadedPlaylists();
+  const dlTracks = useDownloadedTracks();
+  const isDl = dlPlaylists.has(id);
+  const needsUpdate = isDl && tracks.some((t) => !dlTracks.has(t.Id));
 
   const refresh = () => qc.invalidateQueries({ queryKey: key });
   const run = async (fn: () => Promise<unknown>) => {
     try { await fn(); await refresh(); } catch (e: any) { Alert.alert('Failed', e.message); }
   };
-
-  const toggleDownload = async () => {
-    if (isDl) { removePlaylistDownload(id); setDownloaded(false); return; }
-    try {
-      await downloadPlaylist(client, id, tracks, (d, t) => setProgress(`Downloading ${d}/${t}`));
-      setDownloaded(true);
-    } catch (e: any) { Alert.alert('Download failed', e.message); }
-    setProgress(undefined);
-  };
-
-  const confirmDelete = () =>
-    Alert.alert('Delete from Jellyfin?', 'This permanently deletes the playlist on the server. To just hide it, use Hide on the list.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete from Jellyfin', style: 'destructive', onPress: async () => {
-        await run(() => client.deletePlaylist(id)); qc.invalidateQueries({ queryKey: ['playlists'] }); navigation.goBack();
-      } },
-    ]);
 
   if (isLoading) return <Empty loading />;
   if (error) return <Empty error={(error as Error).message} />;
@@ -49,13 +34,15 @@ export function PlaylistScreen({ route, navigation }: any) {
         <Btn title="Play" kind="primary" onPress={() => playNow(client, tracks, 0)} />
         <Btn title="Play next" onPress={() => playNext(client, tracks)} />
         <Btn title="Add to queue" onPress={() => addToQueue(client, tracks)} />
-        <Btn title={progress ?? (isDl ? 'Remove download' : 'Download')} onPress={toggleDownload} disabled={!!progress} />
-        <Btn title="Delete from Jellyfin" kind="danger" onPress={confirmDelete} />
+        <Btn title={progress ? `Downloading ${progress}` : isDl ? 'Remove download' : 'Download'}
+          onPress={() => toggleDownload(client, id, route.params.name, isDl)} disabled={!!progress} />
+        {needsUpdate && !progress && <Btn title="Update download" onPress={() => toggleDownload(client, id, route.params.name, false)} />}
       </View>
       <FlatList data={tracks} keyExtractor={(t, i) => t.PlaylistItemId ?? `${t.Id}-${i}`}
         ListEmptyComponent={<Empty text="Empty playlist. Add tracks from an album." />}
         renderItem={({ item, index }) => (
-          <Row title={item.Name} subtitle={item.AlbumArtist} onPress={() => playNow(client, tracks, index)}
+          <Row title={item.Name} subtitle={item.AlbumArtist} downloaded={dlTracks.has(item.Id)} onPress={() => playNow(client, tracks, index)}
+            onSwipeRight={() => addToQueue(client, [item])}
             right={
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 <Btn title="↑" disabled={index === 0} onPress={() => run(() => client.moveInPlaylist(id, item.PlaylistItemId!, index - 1))} />

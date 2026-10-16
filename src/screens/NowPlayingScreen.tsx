@@ -2,7 +2,7 @@ import { Image, Text, View } from 'react-native';
 import TrackPlayer, { RepeatMode, State, useActiveTrack, usePlaybackState, useProgress } from 'react-native-track-player';
 import { useState } from 'react';
 
-import { Btn, fmt, s } from '../components/ui';
+import { Btn, fmt, s } from '../ui';
 
 export function NowPlayingScreen({ navigation }: any) {
   const track = useActiveTrack();

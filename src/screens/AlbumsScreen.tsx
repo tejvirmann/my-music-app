@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FlatList, TextInput } from 'react-native';
 
-import { Empty, Row, colors, s } from '../components/ui';
+import { Empty, Row, colors, s } from '../ui';
 import { useAuth } from '../state/auth';
 
 const PAGE = 100;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, Text, TextInput } from 'react-native';
 
-import { Btn, colors, s } from '../components/ui';
+import { Btn, colors, s } from '../ui';
 import { useAuth } from '../state/auth';
 import { getLastServerUrl } from '../storage/prefs';
 

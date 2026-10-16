@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Alert, Modal, ScrollView, View } from 'react-native';
 
 import { useAuth } from '../state/auth';
-import { Btn, Empty, Row, colors, s } from './ui';
+import { Btn, Empty, Row, colors, s } from '.';
 
 /** Pick a playlist to add tracks to, or create a new one. */
 export function PlaylistPicker({ visible, trackIds, onClose }: { visible: boolean; trackIds: string[]; onClose: () => void }) {

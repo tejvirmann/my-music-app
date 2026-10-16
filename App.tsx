@@ -7,15 +7,14 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { MiniPlayer } from './src/components/MiniPlayer';
-import { Empty, colors } from './src/components/ui';
+import { MiniPlayer } from './src/ui/MiniPlayer';
+import { Empty, colors } from './src/ui';
 import { setupPlayer } from './src/player/setup';
 import { AlbumScreen } from './src/screens/AlbumScreen';
-import { AlbumsScreen } from './src/screens/AlbumsScreen';
+import { LibraryScreen } from './src/screens/LibraryScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { NowPlayingScreen } from './src/screens/NowPlayingScreen';
 import { PlaylistScreen } from './src/screens/PlaylistScreen';
-import { PlaylistsScreen } from './src/screens/PlaylistsScreen';
 import { QueueScreen } from './src/screens/QueueScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { useAuth } from './src/state/auth';
@@ -29,8 +28,7 @@ const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.
 function Tabs() {
   return (
     <Tab.Navigator screenOptions={{ tabBarActiveTintColor: colors.accent }}>
-      <Tab.Screen name="Albums" component={AlbumsScreen} />
-      <Tab.Screen name="Playlists" component={PlaylistsScreen} />
+      <Tab.Screen name="Library" component={LibraryScreen} />
       <Tab.Screen name="Queue" component={QueueScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
