@@ -10,8 +10,12 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.tejvirmann.mymusic",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"],
-        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true },
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
         "NSLocalNetworkUsageDescription": "Connect to your Jellyfin server on your home network."
       }
     },
@@ -27,7 +31,15 @@
     "plugins": [
       "expo-secure-store",
       "expo-sqlite",
-      ["expo-build-properties", { "ios": { "deploymentTarget": "16.4" } }]
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ],
+      "expo-image"
     ]
   }
 }

@@ -20,3 +20,25 @@ export function getPinnedPlaylists(): string[] {
 export function setPinnedPlaylists(ids: string[]) {
   Storage.setItemSync('pinnedPlaylistIds', JSON.stringify(ids));
 }
+
+/** Albums requested through Lidarr with "like when it arrives". Matched against Jellyfin later. */
+export interface PendingLike { artist: string; title: string }
+export function getPendingLikes(): PendingLike[] {
+  const raw = Storage.getItemSync('pendingLikes');
+  return raw ? JSON.parse(raw) : [];
+}
+export function setPendingLikes(v: PendingLike[]) {
+  Storage.setItemSync('pendingLikes', JSON.stringify(v));
+}
+
+export const getShowHome = (): boolean => Storage.getItemSync('showHome') !== '0';
+export const setShowHome = (v: boolean) => Storage.setItemSync('showHome', v ? '1' : '0');
+
+/** Recently played songs (local history, newest first). */
+export function getRecentTracks(): import('../api/types').JfItem[] {
+  const raw = Storage.getItemSync('recentTracks');
+  return raw ? JSON.parse(raw) : [];
+}
+export function setRecentTracks(v: import('../api/types').JfItem[]) {
+  Storage.setItemSync('recentTracks', JSON.stringify(v));
+}

@@ -13,6 +13,7 @@ export function toTrack(client: JellyfinClient, t: JfItem): Track {
     title: t.Name,
     artist: t.Artists?.join(', ') ?? t.AlbumArtist ?? '',
     album: t.Album,
+    albumId: t.AlbumId,
     artwork: client.imageUrl(art, 600),
     duration: t.RunTimeTicks ? t.RunTimeTicks / 10_000_000 : undefined,
   };

@@ -50,8 +50,10 @@ export class JellyfinClient {
     return (text ? JSON.parse(text) : undefined) as T;
   }
 
+  /** Widths snap to 3 buckets so each image is fetched (and cached) once per size, not once per call site. */
   imageUrl(id: string, maxWidth = 300) {
-    return `${this.s.serverUrl}/Items/${id}/Images/Primary?maxWidth=${maxWidth}&quality=90`;
+    const w = maxWidth <= 160 ? 160 : maxWidth <= 320 ? 320 : 640;
+    return `${this.s.serverUrl}/Items/${id}/Images/Primary?maxWidth=${w}&quality=85`;
   }
 
   /** Direct (static) stream: no transcoding, so the server does almost no work. */
@@ -80,6 +82,55 @@ export class JellyfinClient {
       IncludeItemTypes: 'Audio', Recursive: 'true', SearchTerm: term, Limit: '50',
     });
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+  }
+
+  recentAlbums(limit = 20) {
+    const q = new URLSearchParams({ IncludeItemTypes: 'MusicAlbum', Recursive: 'true', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: String(limit) });
+    return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+  }
+
+  recentSongs(limit = 20) {
+    const q = new URLSearchParams({ IncludeItemTypes: 'Audio', Recursive: 'true', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: String(limit) });
+    return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+  }
+
+  /** One request per type so the UI can show Songs / Albums / Playlists sections. */
+  async search(term: string) {
+    const one = (type: string, limit: number) => {
+      const q = new URLSearchParams({ IncludeItemTypes: type, Recursive: 'true', SearchTerm: term, Limit: String(limit), Fields: 'ChildCount' });
+      return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+    };
+    const [songs, albums, playlists] = await Promise.all([one('Audio', 30), one('MusicAlbum', 15), one('Playlist', 10)]);
+    return { songs: songs.Items, albums: albums.Items, playlists: playlists.Items };
+  }
+
+  /** Full metadata for one item (song info screen). */
+  item(id: string) {
+    const q = new URLSearchParams({ Fields: 'Genres,MediaSources,Path,ProviderIds,ProductionYear,DateCreated' });
+    return this.req<JfItem>(`/Users/${this.s.userId}/Items/${id}?${q}`);
+  }
+
+  /** Ask Jellyfin to re-read tags and re-fetch metadata/images for an item. */
+  refreshMetadata(id: string, replaceAll = false) {
+    const q = new URLSearchParams({
+      MetadataRefreshMode: 'FullRefresh', ImageRefreshMode: 'FullRefresh', ReplaceAllMetadata: String(replaceAll), ReplaceAllImages: String(replaceAll),
+    });
+    return this.req<void>(`/Items/${id}/Refresh?${q}`, { method: 'POST' });
+  }
+
+  /** Lightweight library-wide scan of what's missing. Pages of 500, only the fields we check. */
+  async scanMetadata() {
+    const page = async (type: string, fields: string, start: number) => {
+      const q = new URLSearchParams({ IncludeItemTypes: type, Recursive: 'true', Fields: fields, StartIndex: String(start), Limit: '500', EnableImages: 'true', ImageTypeLimit: '1', EnableImageTypes: 'Primary' });
+      return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+    };
+    const all = async (type: string, fields: string) => {
+      const out: JfItem[] = [];
+      for (let i = 0; ; i += 500) { const r = await page(type, fields, i); out.push(...r.Items); if (out.length >= r.TotalRecordCount || !r.Items.length) break; }
+      return out;
+    };
+    const [songs, albums] = await Promise.all([all('Audio', 'Genres,ProductionYear,ProviderIds'), all('MusicAlbum', 'Genres,ProductionYear,ProviderIds')]);
+    return { songs, albums };
   }
 
   playlists() {

@@ -19,3 +19,9 @@ Everything visual should live here so it can be restyled without touching app lo
 
 ## Placeholders to replace
 Plain text glyphs for icons (↓ ✓ ↑ ✕), basic colors, no app icon/logo yet (set in app.json), no animations/typography.
+
+## Added later
+- `SongRow.tsx` (swipe = queue, ♥ = Liked, long-press menu, download badge), `songMenu.tsx` (long-press menu host).
+- Library search (`screens/SearchResults.tsx`): sections Songs / Albums / Playlists, swipe-right queues each.
+- Home tab (`screens/HomeScreen.tsx`): Lidarr search + "Add" / "♥ Add". Hidable in Settings.
+- Song info (`screens/SongInfoScreen.tsx`): all Jellyfin metadata + "Refresh metadata".

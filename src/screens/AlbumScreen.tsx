@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { FlatList, View } from 'react-native';
 
 import { PlaylistPicker } from '../ui/PlaylistPicker';
-import { Btn, Empty, Row, s } from '../ui';
-import { useDownloadedTracks } from '../downloads';
+import { Btn, Empty, s } from '../ui';
+import { SongRow } from '../ui/SongRow';
 import { addToQueue, playNext, playNow } from '../player/queue';
 import { useAuth } from '../state/auth';
 import type { JfItem } from '../api/types';
@@ -15,18 +15,9 @@ export function AlbumScreen({ route }: any) {
   const { data, isLoading, error } = useQuery({ queryKey: ['album', id], queryFn: () => client.albumTracks(id) });
   const [pick, setPick] = useState<string[] | null>(null);
   const tracks = data?.Items ?? [];
-  const dlTracks = useDownloadedTracks();
 
   if (isLoading) return <Empty loading />;
   if (error) return <Empty error={(error as Error).message} />;
-
-  const trackMenu = (t: JfItem) => (
-    <View style={{ flexDirection: 'row', gap: 6 }}>
-      <Btn title="Next" onPress={() => playNext(client, [t])} />
-      <Btn title="+Q" onPress={() => addToQueue(client, [t])} />
-      <Btn title="+PL" onPress={() => setPick([t.Id])} />
-    </View>
-  );
 
   return (
     <View style={s.screen}>
@@ -38,7 +29,7 @@ export function AlbumScreen({ route }: any) {
       </View>
       <FlatList data={tracks} keyExtractor={(t) => t.Id}
         renderItem={({ item, index }) => (
-          <Row title={`${item.IndexNumber ?? index + 1}. ${item.Name}`} downloaded={dlTracks.has(item.Id)} onSwipeRight={() => addToQueue(client, [item])} onPress={() => playNow(client, tracks, index)} right={trackMenu(item)} />
+          <SongRow track={item} title={`${item.IndexNumber ?? index + 1}. ${item.Name}`} onPress={() => playNow(client, tracks, index)} />
         )} />
       <PlaylistPicker visible={!!pick} trackIds={pick ?? []} onClose={() => setPick(null)} />
     </View>

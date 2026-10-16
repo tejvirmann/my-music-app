@@ -1,4 +1,5 @@
-import { Image, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Text, View } from 'react-native';
 import TrackPlayer, { RepeatMode, State, useActiveTrack, usePlaybackState, useProgress } from 'react-native-track-player';
 import { useState } from 'react';
 
@@ -27,7 +28,7 @@ export function NowPlayingScreen({ navigation }: any) {
   if (!track) return <View style={[s.screen, s.center]}><Text style={s.dim}>Nothing playing</Text></View>;
   return (
     <View style={[s.screen, s.pad, { alignItems: 'center' }]}>
-      <Image source={{ uri: track.artwork }} style={{ width: 280, height: 280, borderRadius: 12, marginTop: 24 }} />
+      <Image source={{ uri: track.artwork }} style={{ width: 280, height: 280, borderRadius: 12, marginTop: 24 }} cachePolicy="disk" />
       <Text style={[s.h1, { marginTop: 24 }]} numberOfLines={2}>{track.title}</Text>
       <Text style={s.dim}>{track.artist}</Text>
       <Text style={[s.dim, { marginTop: 16 }]}>{fmt(position)} / {fmt(duration)}</Text>

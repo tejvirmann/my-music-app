@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { ActivityIndicator, Animated, Image, PanResponder, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
+import { ActivityIndicator, Animated, PanResponder, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 // Placeholder styling only. Theme/UX pass comes later.
 export const colors = { bg: '#0b0b0f', card: '#17171f', text: '#f2f2f7', dim: '#8e8e99', accent: '#1db954', danger: '#ff453a' };
@@ -31,7 +32,9 @@ function SwipeRow({ onSwipe, label, children }: { onSwipe: () => void; label: st
   cb.current = onSwipe;
   const back = () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start();
   const pan = useRef(PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => g.dx > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+    // Capture phase: claim a mostly-horizontal drag before child buttons / the list can take it.
+    onMoveShouldSetPanResponderCapture: (_, g) => g.dx > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderTerminationRequest: () => false,
     onPanResponderMove: (_, g) => x.setValue(Math.max(0, Math.min(g.dx, 140))),
     onPanResponderRelease: (_, g) => { if (g.dx > 80) cb.current(); back(); },
     onPanResponderTerminate: back,
@@ -54,7 +57,7 @@ export function Row({ title, subtitle, art, onPress, onLongPress, right, downloa
 }) {
   const row = (
     <Pressable onPress={onPress} onLongPress={onLongPress} style={s.row}>
-      {art !== undefined && <Image source={art ? { uri: art } : undefined} style={s.art} />}
+      {art !== undefined && <Image source={art ? { uri: art } : undefined} style={s.art} cachePolicy="disk" recyclingKey={art} transition={120} />}
       <View style={{ flex: 1 }}>
         <Text style={s.title} numberOfLines={1}>{title}</Text>
         {(!!subtitle || downloaded) && (

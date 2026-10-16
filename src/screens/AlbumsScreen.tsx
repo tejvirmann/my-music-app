@@ -1,19 +1,17 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { FlatList, TextInput } from 'react-native';
+import { FlatList } from 'react-native';
 
-import { Empty, Row, colors, s } from '../ui';
+import { Empty, Row } from '../ui';
 import { useAuth } from '../state/auth';
 
 const PAGE = 100;
 
 export function AlbumsScreen({ navigation }: any) {
   const client = useAuth((a) => a.client)!;
-  const [search, setSearch] = useState('');
   const q = useInfiniteQuery({
-    queryKey: ['albums', search],
+    queryKey: ['albums'],
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => client.albums(pageParam, PAGE, search || undefined),
+    queryFn: ({ pageParam }) => client.albums(pageParam, PAGE),
     getNextPageParam: (last, all) => {
       const loaded = all.reduce((n, p) => n + p.Items.length, 0);
       return loaded < last.TotalRecordCount ? loaded : undefined;
@@ -24,8 +22,6 @@ export function AlbumsScreen({ navigation }: any) {
 
   return (
     <>
-      <TextInput style={[s.input, { margin: 12 }]} placeholder="Search albums" placeholderTextColor={colors.dim}
-        value={search} onChangeText={setSearch} autoCapitalize="none" />
       {q.isLoading ? <Empty loading /> : q.error ? <Empty error={(q.error as Error).message} /> : (
         <FlatList
           data={items}

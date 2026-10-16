@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, FlatList, Text, View } from 'react-native';
 
 import { Btn, Empty, Row, s } from '../ui';
+import { openSongMenu } from '../ui/songMenu';
 import { toggleDownload } from '../downloadActions';
 import { useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
 import { addToQueue, playNext, playNow } from '../player/queue';
@@ -41,7 +42,7 @@ export function PlaylistScreen({ route }: any) {
       <FlatList data={tracks} keyExtractor={(t, i) => t.PlaylistItemId ?? `${t.Id}-${i}`}
         ListEmptyComponent={<Empty text="Empty playlist. Add tracks from an album." />}
         renderItem={({ item, index }) => (
-          <Row title={item.Name} subtitle={item.AlbumArtist} downloaded={dlTracks.has(item.Id)} onPress={() => playNow(client, tracks, index)}
+          <Row title={item.Name} subtitle={item.AlbumArtist} downloaded={dlTracks.has(item.Id)} onLongPress={() => openSongMenu(item)} onPress={() => playNow(client, tracks, index)}
             onSwipeRight={() => addToQueue(client, [item])}
             right={
               <View style={{ flexDirection: 'row', gap: 6 }}>

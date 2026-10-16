@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { useMemo } from 'react';
 import { create } from 'zustand';
+import { Image } from 'expo-image';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import type { JellyfinClient } from './api/jellyfin';
@@ -61,6 +62,9 @@ export async function downloadPlaylist(
 ) {
   if (useStore.getState().progress[playlistId]) return; // already running
   dir.create({ idempotent: true, intermediates: true });
+  // Warm the on-disk image cache so artwork also shows offline.
+  const artIds = [...new Set(tracks.map((t) => t.AlbumId ?? t.Id))];
+  Image.prefetch(artIds.flatMap((id) => [client.imageUrl(id, 160), client.imageUrl(id, 640)]), 'disk').catch(() => {});
   let done = 0;
   setProgress(playlistId, `0/${tracks.length}`);
   try {
