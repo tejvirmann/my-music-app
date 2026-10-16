@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "My Music",
+    "slug": "my-music-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tejvirmann.mymusic",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true },
+        "NSLocalNetworkUsageDescription": "Connect to your Jellyfin server on your home network."
+      }
+    },
+    "android": {
+      "package": "com.tejvirmann.mymusic",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-sqlite",
+      ["expo-build-properties", { "ios": { "deploymentTarget": "16.4" } }]
+    ]
+  }
+}
