@@ -4,7 +4,7 @@ import { create } from 'zustand';
 
 import type { JfItem } from '../api/types';
 import { trackToItem } from './queue';
-import { getRecentTracks, setRecentTracks } from '../storage/prefs';
+import { getRecentSources, getRecentTracks, setRecentSources, setRecentTracks, type PlaySource } from '../storage/prefs';
 
 const MAX = 30;
 
@@ -21,4 +21,13 @@ export function useRecordPlays() {
     setRecentTracks(next);
     useRecents.setState({ tracks: next });
   }, [t?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+export const useRecentSources = create<{ sources: PlaySource[] }>(() => ({ sources: getRecentSources() }));
+
+/** Call when playback starts from a playlist or album, so it surfaces on Home. */
+export function recordSource(src: PlaySource) {
+  const next = [src, ...useRecentSources.getState().sources.filter((s) => s.id !== src.id)].slice(0, 12);
+  setRecentSources(next);
+  useRecentSources.setState({ sources: next });
 }

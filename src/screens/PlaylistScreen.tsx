@@ -44,10 +44,10 @@ export function PlaylistScreen({ route, navigation }: any) {
           <Pressable disabled={!!progress} onPress={() => toggleDownload(client, 'playlist', id, name, isDl && !stale)} hitSlop={8} accessibilityLabel="Download playlist">
             {progress ? <Txt color={c.ok}>{progress}</Txt> : <Icon name="dl" size={24} color={isDl ? (stale ? c.accent : c.ok) : c.mute} />}
           </Pressable>
-          <IconBtn name="shuf" size={24} color={c.mute} label="Shuffle play" onPress={() => tracks.length && playNow(client, shuffled(), 0, name)} />
+          <IconBtn name="shuf" size={24} color={c.mute} label="Shuffle play" onPress={() => tracks.length && playNow(client, shuffled(), 0, name, { kind: 'playlist', id, name })} />
           <IconBtn name="dots" size={24} color={c.mute} label="More" onPress={() => openPlaylistMenu({ Id: id, Name: name, Type: 'Playlist', ChildCount: tracks.length })} />
           <View style={{ flex: 1 }} />
-          <Pressable onPress={() => tracks.length && playNow(client, tracks, 0, name)} accessibilityLabel="Play playlist"
+          <Pressable onPress={() => tracks.length && playNow(client, tracks, 0, name, { kind: 'playlist', id, name })} accessibilityLabel="Play playlist"
             style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: c.fg, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="play" size={24} color={c.bg} />
           </Pressable>
@@ -58,7 +58,7 @@ export function PlaylistScreen({ route, navigation }: any) {
             {tracks.map((t, i) => (
               <SongRow key={t.PlaylistItemId ?? `${t.Id}-${i}`} track={t} sub={[t.Artists?.[0] ?? t.AlbumArtist, t.Album].filter(Boolean).join(' · ')}
                 ctx={{ playlistId: id, entryId: t.PlaylistItemId, index: i, count: tracks.length, onChange: refresh }}
-                onPress={() => playNow(client, tracks, i, name)} />
+                onPress={() => playNow(client, tracks, i, name, { kind: 'playlist', id, name })} />
             ))}
           </View>
         )}

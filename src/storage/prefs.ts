@@ -52,3 +52,10 @@ export function getRecentTracks(): import('../api/types').JfItem[] {
 export function setRecentTracks(v: import('../api/types').JfItem[]) {
   Storage.setItemSync('recentTracks', JSON.stringify(v));
 }
+
+/** Playlists/albums you actually played from (newest first), for the Home tiles. */
+export interface PlaySource { kind: 'playlist' | 'album'; id: string; name: string }
+export function getRecentSources(): PlaySource[] {
+  try { return JSON.parse(Storage.getItemSync('recentSources') ?? '[]'); } catch { return []; }
+}
+export const setRecentSources = (v: PlaySource[]) => Storage.setItemSync('recentSources', JSON.stringify(v));

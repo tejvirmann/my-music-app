@@ -5,6 +5,8 @@ import { create } from 'zustand';
 import type { JellyfinClient } from '../api/jellyfin';
 import type { JfItem } from '../api/types';
 import { localPath } from '../downloads';
+import type { PlaySource } from '../storage/prefs';
+import { recordSource } from './recents';
 
 /** `queued` marks tracks the user added by hand ("Next in queue"), as opposed to the rest of the playing list. */
 export type QTrack = Track & { queued?: boolean; albumId?: string };
@@ -55,7 +57,8 @@ export function trackToItem(t: Track): JfItem {
 }
 
 /** Play Now: replaces the queue and starts at `index`. `name` is shown as "playing from". */
-export async function playNow(client: JellyfinClient, items: JfItem[], index = 0, name = '') {
+export async function playNow(client: JellyfinClient, items: JfItem[], index = 0, name = '', source?: PlaySource) {
+  if (source) recordSource(source);
   await TrackPlayer.reset();
   await TrackPlayer.add(items.map((i) => toTrack(client, i)));
   await TrackPlayer.skip(index);

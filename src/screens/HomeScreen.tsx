@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 import { playNow } from '../player/queue';
-import { useRecents } from '../player/recents';
+import { useRecentSources, useRecents } from '../player/recents';
 import { useAuth } from '../state/auth';
 import { useSettings } from '../state/settings';
 import { useAppTitle } from '../brand';
@@ -37,10 +37,18 @@ export function HomeScreen({ navigation }: any) {
   const refreshing = albums.isRefetching || added.isRefetching || pl.isRefetching;
   const refresh = () => { albums.refetch(); added.refetch(); pl.refetch(); };
 
-  const tiles = [
-    ...pl.items.slice(0, 3).map((p) => ({ key: `p${p.Id}`, cover: <PlaylistCover id={p.Id} name={p.Name} size={46} />, title: p.Name, go: () => navigation.navigate('Playlist', { id: p.Id, name: p.Name }) })),
-    ...(albums.data?.Items ?? []).slice(0, 3).map((a) => ({ key: `a${a.Id}`, art: client.imageUrl(a.Id, 160), title: a.Name, go: () => navigation.navigate('Album', { id: a.Id, name: a.Name }) })),
+  const sources = useRecentSources((s) => s.sources);
+  const open = (kind: 'playlist' | 'album', id: string, name: string) => () => navigation.navigate(kind === 'playlist' ? 'Playlist' : 'Album', { id, name });
+  // Tiles: what you actually played from lately, topped up with your playlists and new albums.
+  const fromRecent = sources.filter((s) => s.kind === 'album' || pl.items.some((p) => p.Id === s.id)).map((s) => s.kind === 'playlist'
+    ? { key: `p${s.id}`, cover: <PlaylistCover id={s.id} name={s.name} size={46} />, title: s.name, go: open('playlist', s.id, s.name) }
+    : { key: `a${s.id}`, art: client.imageUrl(s.id, 160), title: s.name, go: open('album', s.id, s.name) });
+  const fill = [
+    ...pl.items.map((p) => ({ key: `p${p.Id}`, cover: <PlaylistCover id={p.Id} name={p.Name} size={46} />, title: p.Name, go: open('playlist', p.Id, p.Name) })),
+    ...(albums.data?.Items ?? []).map((a) => ({ key: `a${a.Id}`, art: client.imageUrl(a.Id, 160), title: a.Name, go: open('album', a.Id, a.Name) })),
   ];
+  const seen = new Set<string>();
+  const tiles = [...fromRecent.slice(0, 6), ...fill].filter((t) => !seen.has(t.key) && !!seen.add(t.key)).slice(0, 6);
 
   return (
     <Screen>

@@ -45,7 +45,7 @@ export function AlbumScreen({ route, navigation }: any) {
           <IconBtn name={allLiked ? 'heart' : 'heartO'} size={24} color={allLiked ? c.accent : c.mute} label="Like all songs"
             onPress={() => setLiked(client, qc, tracks.map((t) => t.Id), !allLiked).then(() => toast(allLiked ? 'Removed from Liked' : 'Album added to Liked')).catch((e) => Alert.alert('Failed', e.message))} />
           <View style={{ flex: 1 }} />
-          <Pressable onPress={() => tracks.length && playNow(client, tracks, 0, name)} accessibilityLabel="Play album"
+          <Pressable onPress={() => tracks.length && playNow(client, tracks, 0, name, { kind: 'album', id, name })} accessibilityLabel="Play album"
             style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: c.fg, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="play" size={24} color={c.bg} />
           </Pressable>
@@ -55,7 +55,7 @@ export function AlbumScreen({ route, navigation }: any) {
             {tracks.map((t, i) => (
               <SongRow key={t.Id} track={t} hideArt sub={t.RunTimeTicks ? fmt(t.RunTimeTicks / 1e7) : undefined}
                 lead={<Txt v="mute" style={{ width: 20, textAlign: 'left' }}>{t.IndexNumber ?? i + 1}</Txt>}
-                onPress={() => playNow(client, tracks, i, name)} />
+                onPress={() => playNow(client, tracks, i, name, { kind: 'album', id, name })} />
             ))}
           </View>
         )}
