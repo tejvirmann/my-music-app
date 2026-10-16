@@ -7,7 +7,7 @@ import { Icon } from './Icon';
 import { Txt } from './text';
 import { F, useColors } from './theme';
 
-const ARM = 60; // drag distance (px) at which releasing triggers the action
+const ARM = 80; // drag distance (px) at which releasing triggers the action
 
 /**
  * Swipe right to trigger `onSwipe` (add to queue). Uses the native gesture recogniser, which only activates on a rightward
@@ -24,7 +24,8 @@ export function SwipeRow({ onSwipe, label = 'add to queue', done: doneLabel = 'a
   const [done, setDone] = useState(false);
   const armedRef = useRef(false);
 
-  const x = tx.interpolate({ inputRange: [0, 120], outputRange: [0, 120], extrapolate: 'clamp' });
+  // Follows the finger 1:1 up to ARM, then stretches like elastic: keeps moving, but with growing resistance.
+  const x = tx.interpolate({ inputRange: [0, ARM, 200, 450], outputRange: [0, ARM, 190, 270], extrapolate: 'clamp' });
   const bgOpacity = tx.interpolate({ inputRange: [0, ARM], outputRange: [0, 1], extrapolate: 'clamp' });
   const onGesture = useRef(Animated.event([{ nativeEvent: { translationX: tx } }], {
     useNativeDriver: true,

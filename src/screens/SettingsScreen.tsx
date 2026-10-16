@@ -4,14 +4,15 @@ import { Alert, Pressable, TextInput, View } from 'react-native';
 import TrackPlayer from 'react-native-track-player';
 
 import { LidarrClient } from '../api/lidarr';
-import { APP_NAME } from '../brand';
+import { Image } from 'expo-image';
+import { APP_ICONS } from '../brand';
+import { useAppIcon } from '../state/icon';
 import { totalBytes } from '../downloads';
 import { clearQueue } from '../player/queue';
 import { useAuth } from '../state/auth';
 import { useLibraryPrefs } from '../state/library';
 import { useSettings } from '../state/settings';
 import { clearLidarr, saveLidarr } from '../storage/lidarr';
-import { Logo } from '../ui/Brand';
 import { Body, Button, Screen, TopBar } from '../ui/layout';
 import { Txt } from '../ui/text';
 import { F, useColors, useThemeMode, type Mode } from '../ui/theme';
@@ -69,6 +70,7 @@ export function SettingsScreen({ navigation }: any) {
   const c = useColors();
   const { session, signOut } = useAuth();
   const qc = useQueryClient();
+  const { id: icon, supported: iconSupported, choose: chooseIcon } = useAppIcon();
   const { mode, setMode } = useThemeMode();
   const { showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText } = useSettings();
   const hidden = useLibraryPrefs((s) => s.hidden);
@@ -101,10 +103,20 @@ export function SettingsScreen({ navigation }: any) {
         <Group title="Appearance" />
         <Item label="Theme"><Seg value={mode} options={['light', 'dark', 'system']} onChange={(m: Mode) => setMode(m)} /></Item>
 
-        <Group title="App" />
-        <Item label={APP_NAME} sub="home-screen name and icon are set when the app is built" value="">
-          <Logo size={34} />
-        </Item>
+        <Group title="App icon" />
+        <View style={{ flexDirection: 'row', gap: 14, paddingVertical: 12 }}>
+          {APP_ICONS.map((ic) => {
+            const on = (icon ?? null) === ic.id;
+            return (
+              <Pressable key={ic.label} disabled={!iconSupported} accessibilityRole="button" accessibilityLabel={`${ic.label} icon`}
+                onPress={() => chooseIcon(ic.id).catch((e) => Alert.alert('Could not change icon', e.message))} style={{ alignItems: 'center', gap: 6, opacity: iconSupported ? 1 : 0.4 }}>
+                <Image source={ic.source} style={{ width: 68, height: 68, borderRadius: 15, borderWidth: on ? 2 : 1, borderColor: on ? c.accent : c.line }} contentFit="cover" />
+                <Txt v="small" color={on ? c.accent : c.mute}>{ic.label}</Txt>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Txt v="small">Changes the home-screen icon. iOS shows a short confirmation. The app name is set when the app is built.</Txt>
 
         <Group title="Home" />
         <Item label="Show greeting"><Toggle on={showGreeting} onChange={setShowGreeting} /></Item>

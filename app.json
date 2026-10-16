@@ -40,7 +40,20 @@
         }
       ],
       "expo-image",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "Tiger",
+            "ios": "./assets/icons/tiger.png",
+            "android": {
+              "foregroundImage": "./assets/icons/tiger.png",
+              "backgroundColor": "#000000"
+            }
+          }
+        ]
+      ]
     ]
   }
 }

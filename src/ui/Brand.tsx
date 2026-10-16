@@ -1,8 +1,11 @@
 import { Image } from 'expo-image';
 
-import { APP_ICON } from '../brand';
+import { APP_ICONS } from '../brand';
+import { useAppIcon } from '../state/icon';
 
-/** The app icon, as shown on the home screen. */
+/** The icon currently on the home screen, so the in-app logo always matches it. */
 export function Logo({ size = 28 }: { size?: number }) {
-  return <Image source={APP_ICON} style={{ width: size, height: size, borderRadius: size * 0.22 }} contentFit="cover" />;
+  const id = useAppIcon((s) => s.id);
+  const icon = APP_ICONS.find((i) => i.id === id) ?? APP_ICONS[0];
+  return <Image source={icon.source} style={{ width: size, height: size, borderRadius: size * 0.22 }} contentFit="cover" />;
 }

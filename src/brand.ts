@@ -1,5 +1,13 @@
 import Constants from 'expo-constants';
 
-/** Name and icon come from app.json / assets/icon.png, so the home screen and the in-app logo always match. Change them with scripts/set-branding.sh. */
-export const APP_NAME: string = Constants.expoConfig?.name ?? 'My Music';
-export const APP_ICON = require('../assets/icon.png');
+/** App name comes from app.json, so the home screen and the in-app title always match. Change it with scripts/set-branding.sh. */
+export const APP_NAME: string = Constants.expoConfig?.name ?? 'Music';
+
+/**
+ * Icons the user can switch between (Settings → App icon). `id: null` is the built-in default icon (assets/icon.png);
+ * the others must also be listed under the expo-alternate-app-icons plugin in app.json, with the same name.
+ */
+export const APP_ICONS = [
+  { id: null, label: 'Portrait', source: require('../assets/icons/portrait.png') },
+  { id: 'Tiger', label: 'Tiger', source: require('../assets/icons/tiger.png') },
+] as const;

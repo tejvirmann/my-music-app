@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, PanResponder, Pressable, View, useWindowDimensions } from 'react-native';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Alert, Animated, Easing, PanResponder, Pressable, View, useWindowDimensions } from 'react-native';
+import { PanGestureHandler, State as GState } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TrackPlayer, { RepeatMode, State, useActiveTrack, usePlaybackState, useProgress } from 'react-native-track-player';
 
@@ -17,7 +18,7 @@ import { toast } from '../ui/toast';
 
 const GAP = 12;
 
-/** Artwork rail: previous · current · next. Drag it to skip, like a record crate. */
+/** Artwork rail: previous · current · next. Native-driven drag, so it tracks the finger at 60fps. */
 function Carousel({ size }: { size: number }) {
   const client = useAuth((a) => a.client)!;
   const { tracks, index } = usePlayer();
@@ -30,40 +31,41 @@ function Carousel({ size }: { size: number }) {
   const lim = useRef({ hasPrev, hasNext });
   lim.current = { hasPrev, hasNext };
 
-  // New active track => rail jumps back to centre (the neighbours have just re-rendered).
-  useEffect(() => { x.setValue(0); busy.current = false; }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+  // New active track => rail is already showing it; snap back to centre before paint.
+  useLayoutEffect(() => { x.setValue(0); busy.current = false; }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const pan = useRef(PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy),
-    onPanResponderMove: (_, g) => {
-      if (busy.current) return;
-      const dx = (g.dx < 0 && !lim.current.hasNext) || (g.dx > 0 && !lim.current.hasPrev) ? g.dx * 0.25 : g.dx;
-      x.setValue(dx);
-    },
-    onPanResponderRelease: (_, g) => {
-      if (busy.current) return;
-      const next = g.dx < -50 && lim.current.hasNext, prev = g.dx > 50 && lim.current.hasPrev;
-      if (!next && !prev) { Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0 }).start(); return; }
-      busy.current = true;
-      Animated.timing(x, { toValue: next ? -step : step, duration: 160, useNativeDriver: true }).start(() => {
-        (next ? TrackPlayer.skipToNext() : TrackPlayer.skipToPrevious()).catch(() => { x.setValue(0); busy.current = false; });
-        setTimeout(() => { x.setValue(0); busy.current = false; }, 900); // safety if the track-changed event is slow
-      });
-    },
-    onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
-  })).current;
+  const onGesture = useRef(Animated.event([{ nativeEvent: { translationX: x } }], { useNativeDriver: true })).current;
+  const onState = (e: any) => {
+    const { oldState, translationX: dx, velocityX: vx } = e.nativeEvent;
+    if (oldState !== GState.ACTIVE || busy.current) return;
+    const next = (dx < -step * 0.28 || vx < -600) && dx < 0 && lim.current.hasNext;
+    const prev = (dx > step * 0.28 || vx > 600) && dx > 0 && lim.current.hasPrev;
+    if (!next && !prev) { Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start(); return; }
+    busy.current = true;
+    (next ? TrackPlayer.skipToNext() : TrackPlayer.skipToPrevious()).catch(() => {});
+    Animated.timing(x, { toValue: next ? -step : step, duration: 170, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    setTimeout(() => { x.setValue(0); busy.current = false; }, 1200); // safety if the track-changed event never arrives
+  };
 
-  const slot = (i: number, cur?: boolean) => (
-    <View style={{ width: size, opacity: cur ? 1 : 0.35, transform: [{ scale: cur ? 1 : 0.88 }] }}>
-      <Art uri={art(i)} size={size} />
-    </View>
-  );
+  const tx = x.interpolate({ inputRange: [-step, 0, step], outputRange: [hasNext ? -step : -step * 0.25, 0, hasPrev ? step : step * 0.25], extrapolate: 'clamp' });
+  const near = x.interpolate({ inputRange: [-step, 0, step], outputRange: [1, 0, 1], extrapolate: 'clamp' });
+  const slot = (i: number, cur?: boolean) => {
+    const k = cur ? near : near.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+    const isNext = i > index;
+    // current fades out/shrinks; the neighbour being pulled in grows to full.
+    const grow = cur ? null : x.interpolate({ inputRange: isNext ? [-step, 0] : [0, step], outputRange: isNext ? [1, 0] : [0, 1], extrapolate: 'clamp' });
+    const scale = cur ? k.interpolate({ inputRange: [0, 1], outputRange: [1, 0.88] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
+    const opacity = cur ? k.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] });
+    return <Animated.View style={{ width: size, opacity, transform: [{ scale }] }}><Art uri={art(i)} size={size} /></Animated.View>;
+  };
   return (
-    <View style={{ height: size + 12, overflow: 'hidden' }} {...pan.panHandlers}>
-      <Animated.View style={{ flexDirection: 'row', gap: GAP, position: 'absolute', top: 6, left: (width - size) / 2 - step, transform: [{ translateX: x }] }}>
-        {slot(index - 1)}{slot(index, true)}{slot(index + 1)}
+    <PanGestureHandler activeOffsetX={[-10, 10]} failOffsetY={[-24, 24]} onGestureEvent={onGesture} onHandlerStateChange={onState}>
+      <Animated.View style={{ height: size + 12, overflow: 'hidden' }}>
+        <Animated.View style={{ flexDirection: 'row', gap: GAP, position: 'absolute', top: 6, left: (width - size) / 2 - step, transform: [{ translateX: tx }] }}>
+          {slot(index - 1)}{slot(index, true)}{slot(index + 1)}
+        </Animated.View>
       </Animated.View>
-    </View>
+    </PanGestureHandler>
   );
 }
 

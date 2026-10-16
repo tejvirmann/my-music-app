@@ -76,6 +76,7 @@ The look is deliberately editorial: warm paper in light mode, near-black in dark
 
 **Polish**
 - Light, dark and system themes
+- Switchable app icon (bundled alternates, changed from Settings)
 - Bottom-sheet menus, toasts, and a swipe-to-queue gesture on every song row
 
 ## 📲 Install on your iPhone
@@ -241,7 +242,14 @@ Because of native modules (`react-native-track-player`, SQLite, gesture handler�
 ./scripts/set-branding.sh "My Music" path/to/icon.png   # name and image; image is optional
 ```
 
-Then rebuild. (For a quick personal look without rebuilding, the iOS Shortcuts app can add a home-screen shortcut with a custom name and icon.)
+Then rebuild.
+
+**Switching the icon from inside the app.** Settings → **App icon** lists every bundled icon; tap one to change the home-screen icon instantly (iOS shows a short confirmation). iOS only allows icons that were bundled at build time. To add one:
+1. Save a 1024×1024 PNG (no transparency) in `assets/icons/`.
+2. Add it under the `expo-alternate-app-icons` plugin in `app.json` (`name` in PascalCase).
+3. Add it to `APP_ICONS` in `src/brand.ts`, then rebuild.
+
+(For a quick personal look without rebuilding, the iOS Shortcuts app can add a home-screen shortcut with a custom name and icon.)
 
 ## 🗺 Status and roadmap
 
