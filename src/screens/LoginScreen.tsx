@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../state/auth';
-import { APP_NAME } from '../brand';
+import { useAppTitle } from '../brand';
 import { getLastServerUrl } from '../storage/prefs';
 import { Logo } from '../ui/Brand';
 import { Button } from '../ui/layout';
@@ -23,6 +23,7 @@ function Field({ label, ...p }: { label: string } & React.ComponentProps<typeof 
 
 export function LoginScreen() {
   const c = useColors();
+  const appTitle = useAppTitle();
   const inset = useSafeAreaInsets();
   const signIn = useAuth((a) => a.signIn);
   const [url, setUrl] = useState(getLastServerUrl() || 'http://');
@@ -43,7 +44,7 @@ export function LoginScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, paddingTop: inset.top + 24, paddingBottom: inset.bottom + 24 }}>
         <View style={{ marginBottom: 18 }}><Logo size={48} /></View>
-        <Txt v="h1" style={{ fontSize: 46, lineHeight: 46 }}>{APP_NAME}</Txt>
+        <Txt v="h1" style={{ fontSize: 46, lineHeight: 46 }}>{appTitle}</Txt>
         <Txt v="mute" style={{ marginTop: 8, marginBottom: 36 }}>your library, your server</Txt>
         <Field label="server" value={url} onChangeText={setUrl} autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="http://192.168.1.x:8096" />
         <Field label="username" value={user} onChangeText={setUser} autoCapitalize="none" autoCorrect={false} textContentType="username" />

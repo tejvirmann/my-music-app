@@ -1,6 +1,10 @@
 import Constants from 'expo-constants';
 
+import { useSettings } from './state/settings';
+
 /** App name comes from app.json, so the home screen and the in-app title always match. Change it with scripts/set-branding.sh. */
+/** Name shown inside the app: the user's custom title if set, else the configured app name. */
+export const useAppTitle = (): string => useSettings((s) => s.appTitle.trim()) || APP_NAME;
 export const APP_NAME: string = Constants.expoConfig?.name ?? 'Music';
 
 /**

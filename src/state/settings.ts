@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 
-import { getGreetingText, getShowDiscover, getShowGreeting, setGreetingText, setShowDiscover, setShowGreeting } from '../storage/prefs';
+import { getAppTitle, getGreetingText, getShowDiscover, getShowGreeting, setAppTitle, setGreetingText, setShowDiscover, setShowGreeting } from '../storage/prefs';
 
 interface Settings {
   showDiscover: boolean; setShowDiscover: (v: boolean) => void;
   showGreeting: boolean; setShowGreeting: (v: boolean) => void;
+  appTitle: string; setAppTitle: (v: string) => void;
   greetingText: string; setGreetingText: (v: string) => void;
 }
 
@@ -14,6 +15,8 @@ export const useSettings = create<Settings>((set) => ({
   setShowDiscover: (v) => { setShowDiscover(v); set({ showDiscover: v }); },
   showGreeting: getShowGreeting(),
   setShowGreeting: (v) => { setShowGreeting(v); set({ showGreeting: v }); },
+  appTitle: getAppTitle(),
+  setAppTitle: (v) => { setAppTitle(v); set({ appTitle: v }); },
   greetingText: getGreetingText(),
   setGreetingText: (v) => { setGreetingText(v); set({ greetingText: v }); },
 }));

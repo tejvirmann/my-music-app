@@ -34,6 +34,10 @@ export function setPendingLikes(v: PendingLike[]) {
 export const getShowDiscover = (): boolean => Storage.getItemSync('showDiscover') !== '0';
 export const setShowDiscover = (v: boolean) => Storage.setItemSync('showDiscover', v ? '1' : '0');
 
+/** In-app title (home header, login). Empty = the app's configured name. */
+export const getAppTitle = (): string => Storage.getItemSync('appTitle') ?? '';
+export const setAppTitle = (v: string) => Storage.setItemSync('appTitle', v);
+
 /** Home greeting: hidden, automatic (by time of day, when text is empty) or custom text. */
 export const getShowGreeting = (): boolean => Storage.getItemSync('showGreeting') !== '0';
 export const setShowGreeting = (v: boolean) => Storage.setItemSync('showGreeting', v ? '1' : '0');

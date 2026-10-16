@@ -17,6 +17,7 @@ import { Body, Button, Screen, TopBar } from '../ui/layout';
 import { Txt } from '../ui/text';
 import { F, useColors, useThemeMode, type Mode } from '../ui/theme';
 import { toast } from '../ui/toast';
+import { APP_NAME } from '../brand';
 import { greeting } from './hooks';
 import { useLidarrConfig } from './lidarrConfig';
 
@@ -72,7 +73,7 @@ export function SettingsScreen({ navigation }: any) {
   const qc = useQueryClient();
   const { id: icon, supported: iconSupported, choose: chooseIcon } = useAppIcon();
   const { mode, setMode } = useThemeMode();
-  const { showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText } = useSettings();
+  const { showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
   const hidden = useLibraryPrefs((s) => s.hidden);
   const unhideAll = useLibraryPrefs((s) => s.unhideAll);
   const saved = useLidarrConfig().data;
@@ -116,9 +117,13 @@ export function SettingsScreen({ navigation }: any) {
             );
           })}
         </View>
-        <Txt v="small">Changes the home-screen icon. iOS shows a short confirmation. The app name is set when the app is built.</Txt>
+        <Txt v="small">Changes the home-screen icon. iOS shows a short confirmation. The name under the icon is set when the app is built.</Txt>
 
         <Group title="Home" />
+        <View style={{ paddingVertical: 8 }}>
+          <Txt v="label">app title</Txt>
+          <Input value={appTitle} onChangeText={setAppTitle} maxLength={24} placeholder={`default: ${APP_NAME}`} style={{ marginTop: 2 }} />
+        </View>
         <Item label="Show greeting"><Toggle on={showGreeting} onChange={setShowGreeting} /></Item>
         {showGreeting && (
           <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.line }}>

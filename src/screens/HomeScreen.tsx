@@ -5,7 +5,7 @@ import { playNow } from '../player/queue';
 import { useRecents } from '../player/recents';
 import { useAuth } from '../state/auth';
 import { useSettings } from '../state/settings';
-import { APP_NAME } from '../brand';
+import { useAppTitle } from '../brand';
 import { Art } from '../ui/Art';
 import { Logo } from '../ui/Brand';
 import { Body, Empty, Heading, IconBtn, Screen, Section, TopBar } from '../ui/layout';
@@ -26,6 +26,7 @@ function Tile({ art, title, onPress }: { art: string; title: string; onPress: ()
 
 export function HomeScreen({ navigation }: any) {
   const c = useColors();
+  const title = useAppTitle();
   const { showGreeting, greetingText } = useSettings();
   const client = useAuth((a) => a.client)!;
   const recent = useRecents((r) => r.tracks).slice(0, 8);
@@ -43,7 +44,7 @@ export function HomeScreen({ navigation }: any) {
   return (
     <Screen>
       <TopBar
-        left={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Logo size={26} /><Txt style={{ fontFamily: F.serif, fontSize: 18 }}>{APP_NAME}</Txt></View>}
+        left={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Logo size={26} /><Txt style={{ fontFamily: F.serif, fontSize: 20, lineHeight: 26, marginTop: 4 }}>{title}</Txt></View>}
         right={<IconBtn name="gear" label="Settings" onPress={() => navigation.navigate('Settings')} />} />
       <Body refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.mute} />}>
         {showGreeting && <Heading title={greetingText.trim() || greeting()} />}
