@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockups — gallery direction</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--fg:#141414;--mute:#8a867c;--line:#d9d4c8;--card:#ebe7dc;--accent:#d8431f;
+  --mono:"DM Mono",ui-monospace,Menlo,monospace;--serif:"Instrument Serif",Georgia,serif}
+:root[data-theme=dark]{--bg:#0f0f0e;--fg:#ece8dd;--mute:#7d796f;--line:#2a2927;--card:#191917;--accent:#ff6a3d}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f0f0e;--fg:#ece8dd;--mute:#7d796f;--line:#2a2927;--card:#191917;--accent:#ff6a3d}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:400 12px/1.5 var(--mono);padding:24px 16px 64px}
+header{max-width:1400px;margin:0 auto 28px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{font:italic 400 28px var(--serif)}
+header p{color:var(--mute)}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--line);padding:4px 10px;cursor:pointer;border-radius:0}
+button:hover{border-color:var(--fg)}
+.row{max-width:1400px;margin:0 auto;display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+figure{width:300px}
+figcaption{color:var(--mute);margin-bottom:8px;text-transform:lowercase}
+.phone{height:620px;border:1px solid var(--line);background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.scroll{flex:1;overflow-y:auto;padding:18px 16px 12px}
+.scroll::-webkit-scrollbar{display:none}
+.top{display:flex;justify-content:space-between;color:var(--mute);margin-bottom:22px}
+h2{font:italic 400 34px/1 var(--serif);margin-bottom:4px}
+.sub{color:var(--mute);margin-bottom:18px}
+.rule{color:var(--line);overflow:hidden;white-space:nowrap;margin:10px 0}
+.idx a{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none}
+.idx a span:last-child{color:var(--mute)}
+.idx a:hover{color:var(--accent)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}
+.grid .cap{margin-top:5px;line-height:1.3}.grid .cap small{display:block;color:var(--mute)}
+.art{aspect-ratio:1;width:100%;background:var(--c1)}
+.a1{background:linear-gradient(135deg,#d8431f,#f2b66d)}
+.a2{background:radial-gradient(circle at 30% 30%,#e9e2cf 0 18%,#2d4a3e 19%)}
+.a3{background:repeating-linear-gradient(90deg,#1b1b1b 0 6px,#e8e1cf 6px 12px)}
+.a4{background:conic-gradient(from 90deg,#3b5ba5,#e8c9d0,#3b5ba5)}
+.a5{background:linear-gradient(#e8c9d0 50%,#7a1f2b 50%)}
+.a6{background:radial-gradient(circle,#f2b66d 0 30%,#1d2a44 31%)}
+.collage{display:grid;grid-template-columns:1fr 1fr;aspect-ratio:1;width:100%}
+.collage div{aspect-ratio:1}
+.hero{display:flex;gap:14px;align-items:flex-end;margin-bottom:18px}
+.hero .collage,.hero .art{width:130px;flex:none}
+.hero .cover-btn{position:relative}
+.hero .cover-btn button{position:absolute;bottom:4px;left:4px;background:var(--bg);font-size:10px;padding:2px 6px}
+.tr{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);align-items:center}
+.tr.on{color:var(--accent)}
+.tr i{font-style:normal;color:var(--mute)}
+.mini{border-top:1px solid var(--line);padding:9px 16px;display:flex;gap:10px;align-items:center;background:var(--bg)}
+.mini .art{width:34px;flex:none}.mini div:nth-child(2){flex:1;min-width:0}
+.bar{height:1px;background:var(--line);position:relative;margin:10px 0}
+.bar b{position:absolute;left:0;top:-1px;height:3px;width:38%;background:var(--fg)}
+.tabs{display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:9px 0;color:var(--mute)}
+.tabs .on{color:var(--fg);border-bottom:1px solid var(--fg)}
+.np .art{margin:6px 0 20px}
+.ctl{display:flex;justify-content:space-between;font-size:15px;margin-top:18px}
+.search{border-bottom:1px solid var(--fg);padding:6px 0;margin-bottom:16px;color:var(--mute)}
+.tag{display:inline-block;border:1px solid var(--line);padding:0 6px;margin:0 4px 6px 0;color:var(--mute)}
+.sheet{border:1px solid var(--line);background:var(--card);padding:12px;margin:10px 0}
+.sheet .grid{grid-template-columns:repeat(3,1fr);gap:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Index of sound — mockups v0</h1>
+  <p>museum / artist-site direction · DM Mono + Instrument Serif · <button id="t">◐ light / dark</button></p>
+</header>
+
+<div class="row">
+
+<!-- 1 HOME -->
+<figure><figcaption>01 — home / index</figcaption>
+<div class="phone"><div class="scroll">
+  <div class="top"><span>index</span><span>search ⌕</span></div>
+  <h2>Selected<br>listening</h2>
+  <p class="sub">214 albums · 31 playlists</p>
+  <div class="grid">
+    <div><div class="art a1"></div><div class="cap">Blonde<small>Frank Ocean, 2016</small></div></div>
+    <div><div class="art a2"></div><div class="cap">Mojo<small>Dil Saeed, 2021</small></div></div>
+    <div><div class="art a3"></div><div class="cap">Stripes<small>Nils Frahm, 2014</small></div></div>
+    <div><div class="art a4"></div><div class="cap">Halo Fields<small>Aya, 2023</small></div></div>
+  </div>
+  <div class="rule">────────────────────────────────────────</div>
+  <p class="sub">recent playlists</p>
+  <div class="idx">
+    <a><span>Late drive</span><span>24</span></a>
+    <a><span>Sunday kitchen</span><span>41</span></a>
+    <a><span>Punjabi mellow</span><span>18</span></a>
+    <a><span>Liked</span><span>312</span></a>
+  </div>
+</div>
+<div class="mini"><div class="art a2"></div><div><div>Mojo</div><div style="color:var(--mute)">Dil Saeed</div></div><div>❚❚</div></div>
+<div class="tabs"><span class="on">home</span><span>library</span><span>search</span><span>settings</span></div>
+</div></figure>
+
+<!-- 2 LIBRARY INDEX -->
+<figure><figcaption>02 — library, text index (jagdeep-style)</figcaption>
+<div class="phone"><div class="scroll">
+  <div class="top"><span>library</span><span>◐</span></div>
+  <h2>Playlists</h2>
+  <p class="sub">albums · <u>playlists</u> · artists</p>
+  <div class="idx">
+    <a><span>↑ Late drive</span><span>24 · ↓</span></a>
+    <a><span>↑ Sunday kitchen</span><span>41</span></a>
+    <a><span>Punjabi mellow</span><span>18 · ↓</span></a>
+    <a><span>Gym 2025</span><span>60</span></a>
+    <a><span>Rain</span><span>12</span></a>
+    <a><span>Road trip</span><span>88</span></a>
+    <a><span>Study, no vocals</span><span>35</span></a>
+    <a><span>Old favorites</span><span>140</span></a>
+    <a><span>+ new playlist</span><span></span></a>
+  </div>
+  <p class="sub" style="margin-top:16px">hover / press a row → thumbnail preview of its 2×2 cover</p>
+</div>
+<div class="tabs"><span>home</span><span class="on">library</span><span>search</span><span>settings</span></div>
+</div></figure>
+
+<!-- 3 PLAYLIST -->
+<figure><figcaption>03 — playlist: auto 2×2 cover + custom cover</figcaption>
+<div class="phone"><div class="scroll">
+  <div class="top"><span>← library</span><span>edit</span></div>
+  <div class="hero">
+    <div class="cover-btn">
+      <div class="collage"><div class="art a1"></div><div class="art a2"></div><div class="art a3"></div><div class="art a4"></div></div>
+      <button>change cover</button>
+    </div>
+    <div><h2 style="font-size:28px">Late drive</h2><div class="sub" style="margin:0">24 songs · 1h 38m</div></div>
+  </div>
+  <div class="sheet">
+    <div style="margin-bottom:8px">cover</div>
+    <div class="grid">
+      <div><div class="collage"><div class="art a1"></div><div class="art a2"></div><div class="art a3"></div><div class="art a4"></div></div><div class="cap">auto (first 4)</div></div>
+      <div><div class="art a5"></div><div class="cap">photo library</div></div>
+      <div><div class="art a6"></div><div class="cap">from album</div></div>
+    </div>
+  </div>
+  <div class="tr on"><i>01</i><span>Nights</span><i>5:07</i></div>
+  <div class="tr"><i>02</i><span>Mojo</span><i>3:42</i></div>
+  <div class="tr"><i>03</i><span>Says</span><i>8:21</i></div>
+  <div class="tr"><i>04</i><span>Halo</span><i>4:10</i></div>
+  <div class="tr"><i>05</i><span>Dust</span><i>3:33</i></div>
+  <div class="tr"><i>06</i><span>Slow burn</span><i>6:02</i></div>
+</div>
+<div class="mini"><div class="art a1"></div><div><div>Nights</div><div style="color:var(--mute)">Frank Ocean</div></div><div>❚❚</div></div>
+</div></figure>
+
+<!-- 4 NOW PLAYING -->
+<figure><figcaption>04 — now playing</figcaption>
+<div class="phone"><div class="scroll np">
+  <div class="top"><span>↓ close</span><span>queue ≡</span></div>
+  <div class="art a1"></div>
+  <h2 style="font-size:30px">Nights</h2>
+  <div class="sub" style="margin:0">Frank Ocean — Blonde, 2016</div>
+  <div class="bar"><b></b></div>
+  <div style="display:flex;justify-content:space-between;color:var(--mute)"><span>1:56</span><span>5:07</span></div>
+  <div class="ctl"><span>⇄</span><span>⏮</span><span style="font-size:22px">❚❚</span><span>⏭</span><span>♡</span></div>
+  <div class="rule" style="margin-top:22px">────────────────────────────────────────</div>
+  <p class="sub">up next</p>
+  <div class="tr"><i>→</i><span>Mojo</span><i>3:42</i></div>
+  <div class="tr"><i>→</i><span>Says</span><i>8:21</i></div>
+</div></div></figure>
+
+<!-- 5 ADD / SCRAPE -->
+<figure><figcaption>05 — add music (search → fetch album)</figcaption>
+<div class="phone"><div class="scroll">
+  <div class="top"><span>search</span><span>◐</span></div>
+  <h2>Find &amp; add</h2>
+  <div class="search">blonde frank ocean_</div>
+  <span class="tag">library</span><span class="tag" style="color:var(--fg);border-color:var(--fg)">discover</span>
+  <div class="idx" style="margin-top:8px">
+    <a><span>Blonde — Frank Ocean</span><span>+ add</span></a>
+    <a><span>Endless — Frank Ocean</span><span>+ add</span></a>
+    <a><span>Channel Orange</span><span>✓ in library</span></a>
+    <a><span>Nostalgia, Ultra</span><span>+ add</span></a>
+  </div>
+  <div class="sheet" style="margin-top:16px">
+    <div>Blonde · 17 tracks</div>
+    <div style="color:var(--mute)">art: found · metadata: matched (MusicBrainz) · queued for download</div>
+    <div class="bar"><b style="width:64%"></b></div>
+  </div>
+</div>
+<div class="tabs"><span>home</span><span>library</span><span class="on">search</span><span>settings</span></div>
+</div></figure>
+
+</div>
+
+<script>
+const r=document.documentElement,b=document.getElementById('t');
+b.onclick=()=>{const d=(r.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark';r.dataset.theme=d?'light':'dark'};
+</script>
+</body>
+</html>

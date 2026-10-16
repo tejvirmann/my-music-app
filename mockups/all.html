@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>All screens — gallery direction</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--fg:#141414;--mute:#8a867c;--line:#d9d4c8;--card:#ebe7dc;--accent:#d8431f;--ok:#3fa86b;
+  --mono:"DM Mono",ui-monospace,Menlo,monospace;--serif:"Instrument Serif",Georgia,serif}
+:root[data-theme=dark]{--bg:#0f0f0e;--fg:#ece8dd;--mute:#7d796f;--line:#2a2927;--card:#191917;--accent:#ff6a3d}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]):not([data-theme=dark]){--bg:#0f0f0e;--fg:#ece8dd;--mute:#7d796f;--line:#2a2927;--card:#191917;--accent:#ff6a3d}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:400 12px/1.5 var(--mono);padding:24px 16px 80px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;border-radius:0}
+svg{display:block;fill:currentColor}
+header{max-width:1400px;margin:0 auto 12px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{font:italic 400 30px var(--serif)}
+header .tg2{border:1px solid var(--line);padding:4px 10px}
+.flow{max-width:1400px;margin:0 auto 8px;color:var(--mute);border:1px solid var(--line);padding:10px 14px}
+.flow b{color:var(--fg);font-weight:500}
+.group{max-width:1400px;margin:34px auto 12px;font:italic 400 24px var(--serif);border-bottom:1px solid var(--line)}
+.row{max-width:1400px;margin:0 auto;display:flex;gap:26px;flex-wrap:wrap}
+figure{width:300px}
+figcaption{color:var(--mute);margin-bottom:8px}
+figcaption b{color:var(--fg);font-weight:500}
+.phone{height:640px;border:1px solid var(--line);background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.scroll{flex:1;overflow:hidden;padding:18px 16px 12px}
+.top{display:flex;justify-content:space-between;align-items:center;color:var(--mute);margin-bottom:16px;min-height:24px}
+.top .fg{color:var(--fg)}
+h2{font:italic 400 34px/1 var(--serif);margin-bottom:4px}
+.sub{color:var(--mute)}
+.tabs{display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:9px 0;color:var(--mute)}
+.tabs .on{color:var(--fg);border-bottom:1px solid var(--fg)}
+.art{aspect-ratio:1;background:#888;flex:none}
+.a1{background:linear-gradient(135deg,#d8431f,#f2b66d)}
+.a2{background:radial-gradient(circle at 30% 30%,#e9e2cf 0 18%,#2d4a3e 19%)}
+.a3{background:repeating-linear-gradient(90deg,#1b1b1b 0 6px,#e8e1cf 6px 12px)}
+.a4{background:conic-gradient(from 90deg,#3b5ba5,#e8c9d0,#3b5ba5)}
+.a5{background:linear-gradient(#e8c9d0 50%,#7a1f2b 50%)}
+.a6{background:radial-gradient(circle,#f2b66d 0 30%,#1d2a44 31%)}
+.collage{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:1;flex:none;overflow:hidden}
+.collage .art{width:auto!important;height:100%;aspect-ratio:auto}
+.sect{color:var(--mute);margin:16px 0 6px;display:flex;justify-content:space-between;align-items:baseline}
+.sect b{font:italic 400 20px var(--serif);color:var(--fg)}
+.pills{display:flex;gap:6px;margin:12px 0 10px}
+.pill{border:1px solid var(--line);padding:2px 10px;color:var(--mute);border-radius:99px}
+.pill.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{display:flex;align-items:center;gap:8px;background:var(--card);overflow:hidden;min-width:0}
+.tile .art,.tile .collage{width:44px}
+.tile span{font-weight:500;line-height:1.2;padding-right:6px}
+.li{display:flex;align-items:center;gap:12px;padding:7px 0;background:var(--bg)}
+.li .art,.li .collage{width:44px}
+.li .t{flex:1;min-width:0}
+.li .t b{font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .t span{color:var(--mute);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li.on .t b{color:var(--accent)}
+.li .dots{padding:8px 2px 8px 10px;color:var(--mute)}
+.dl{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:5px}
+.meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.meta i{font-style:normal;border:1px solid var(--line);padding:0 5px;color:var(--mute);font-size:10px}
+.meta i.hit{border-color:var(--accent);color:var(--accent)}
+mark{background:none;color:var(--accent)}
+.search{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--fg);padding:6px 0;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}
+.grid2 .cap{margin-top:5px;line-height:1.3}.grid2 .cap small{display:block;color:var(--mute)}
+.hero{display:flex;gap:14px;align-items:flex-end;margin-bottom:12px}
+.hero .collage,.hero .art{width:120px}
+.act{display:flex;gap:18px;align-items:center;margin:4px 0 8px;color:var(--mute)}
+.act .play{margin-left:auto;width:46px;height:46px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center}
+.tr{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.tr i{font-style:normal;color:var(--mute);width:18px}
+.tr span{flex:1}
+.tr.on span,.tr.on i{color:var(--accent)}
+.mini{border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:10px;align-items:center}
+.mini .art{width:36px}.mini .t{flex:1;min-width:0}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--fg);padding:14px 16px 10px}
+.sheet .li{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:6px}
+.sheet .it{display:flex;gap:14px;align-items:center;padding:10px 0}
+.sheet .it svg{color:var(--mute)}
+.grp{display:flex;justify-content:space-between;align-items:baseline;margin:18px 0 4px}
+.grp b{font:italic 400 20px var(--serif)}
+.grp span{color:var(--mute)}
+.note{color:var(--mute);margin-bottom:4px}
+.help{border:1px solid var(--line);padding:9px 12px;color:var(--mute);margin-bottom:6px}
+.help b{color:var(--fg);font-weight:500}
+.eq{display:flex;gap:2px;align-items:flex-end;height:14px;width:14px}
+.eq i{flex:1;background:var(--accent);animation:eq 1s infinite ease-in-out}
+.eq i:nth-child(2){animation-delay:.2s}.eq i:nth-child(3){animation-delay:.4s}
+@keyframes eq{0%,100%{height:30%}50%{height:100%}}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.item small{display:block;color:var(--mute)}
+.item .v{color:var(--mute)}
+.seg{display:flex;border:1px solid var(--fg)}
+.seg span{padding:2px 10px}.seg .on{background:var(--fg);color:var(--bg)}
+.tg{width:38px;height:20px;border:1px solid var(--fg);position:relative;flex:none}
+.tg::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;background:var(--fg)}
+.tg.on{background:var(--fg)}.tg.on::after{left:20px;background:var(--bg)}
+.danger{color:var(--accent)}
+.field{border-bottom:1px solid var(--fg);padding:6px 0;margin:0 0 16px;display:flex;flex-direction:column}
+.field small{color:var(--mute);font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+.btn{border:1px solid var(--fg);padding:9px;text-align:center;margin-top:8px}
+.btn.solid{background:var(--fg);color:var(--bg)}
+/* swipe frozen mid-gesture */
+.sw{position:relative;overflow:hidden}
+.sw .bg{position:absolute;inset:0;display:flex;align-items:center;gap:8px;padding-left:14px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--bg))}
+.sw .fg{position:relative;transform:translateX(72px)}
+/* now playing */
+.np{padding:14px 0 12px;display:flex;flex-direction:column;height:100%}
+.np .top{padding:0 16px;margin-bottom:10px}
+.np .top .c{text-align:center;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.car{display:flex;gap:12px;padding:0 28px;overflow:hidden}
+.car .art{width:244px;flex:none;opacity:.35;transform:scale(.88)}
+.car .art.cur{opacity:1;transform:none;box-shadow:0 18px 40px -18px rgba(0,0,0,.5)}
+.car{margin-left:-0px}
+.ti{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0}
+.ti h2{font-size:30px;margin:0}
+.scrub{padding:14px 20px 0}
+.track{height:3px;background:var(--line);position:relative}
+.track b{position:absolute;left:0;top:0;bottom:0;width:38%;background:var(--fg)}
+.track u{position:absolute;left:38%;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--fg);transform:translateX(-50%)}
+.times{display:flex;justify-content:space-between;color:var(--mute);font-size:10px;margin-top:8px}
+.ctl{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 0}
+.ctl>*{width:44px;height:44px;display:grid;place-items:center}
+.ctl .main{width:64px;height:64px;border-radius:50%;background:var(--fg);color:var(--bg)}
+.foot{display:flex;justify-content:space-between;padding:12px 24px 0;color:var(--mute);margin-top:auto}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:0 10px}
+.kv>*{padding:6px 0;border-bottom:1px solid var(--line)}
+.kv>:nth-child(odd){color:var(--mute)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10-6.5a1 1 0 0 0 0-1.72l-10-6.5A1 1 0 0 0 8 5.5z"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.5" height="14" rx="1"/><rect x="13.5" y="5" width="4.5" height="14" rx="1"/></symbol>
+  <symbol id="prev" viewBox="0 0 24 24"><rect x="5" y="5" width="2.4" height="14" rx="1"/><path d="M19 6.2v11.6a.9.9 0 0 1-1.4.75l-8.4-5.8a.9.9 0 0 1 0-1.5l8.4-5.8A.9.9 0 0 1 19 6.2z"/></symbol>
+  <symbol id="next" viewBox="0 0 24 24"><rect x="16.6" y="5" width="2.4" height="14" rx="1"/><path d="M5 6.2v11.6a.9.9 0 0 0 1.4.75l8.4-5.8a.9.9 0 0 0 0-1.5L6.4 5.45A.9.9 0 0 0 5 6.2z"/></symbol>
+  <symbol id="shuf" viewBox="0 0 24 24"><path d="M16 4h4v4l-1.6-1.6-4.2 4.2-1.4-1.4 4.2-4.2zM4 6h3.500c1.200 0 2.300.5 3 1.400l7 8.600 1.500-1.500L20 16v4h-4l1.600-1.600-1.200-1.400-6.600-8.200C9.400 8.300 9 8 8 8H4zM4 16h4l2-2.500 1.300 1.700L9.200 18H4z"/></symbol>
+  <symbol id="rep" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></symbol>
+  <symbol id="heart" viewBox="0 0 24 24"><path d="M12 21s-8-5.200-8-11a4.500 4.500 0 0 1 8-2.800A4.500 4.500 0 0 1 20 10c0 5.800-8 11-8 11z"/></symbol>
+  <symbol id="queue" viewBox="0 0 24 24"><path d="M3 6h14v2H3zm0 5h14v2H3zm0 5h9v2H3zm14 0v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></symbol>
+  <symbol id="dev" viewBox="0 0 24 24"><path d="M4 4h16v11H4zm2 2v7h12V6zM9 17h6v2H9z"/></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="M12 16 5 9l1.400-1.400L12 13.200l5.600-5.600L19 9z"/></symbol>
+  <symbol id="dl" viewBox="0 0 24 24"><path d="M11 4h2v9l3.500-3.500L18 11l-6 6-6-6 1.500-1.500L11 13zM5 19h14v2H5z"/></symbol>
+  <symbol id="info" viewBox="0 0 24 24"><path d="M11 10h2v7h-2zm0-3h2v2h-2zM12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16z"/></symbol>
+  <symbol id="srch" viewBox="0 0 24 24"><path d="M10 3a7 7 0 0 1 5.600 11.200L21 19.600 19.600 21l-5.400-5.400A7 7 0 1 1 10 3zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></symbol>
+  <symbol id="gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8.500" stroke-width="3" stroke-dasharray="3.340 3.340"/><circle cx="12" cy="12" r="7" stroke-width="2"/><circle cx="12" cy="12" r="2.600" stroke-width="2"/></g></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
+  <symbol id="grip" viewBox="0 0 24 24"><path d="M4 8h16v2H4zm0 6h16v2H4z"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M9.500 17.500 4 12l1.400-1.400 4.100 4.100 9.100-9.100L20 7z"/></symbol>
+  <symbol id="img" viewBox="0 0 24 24"><path d="M4 5h16v14H4zm2 2v7l3-3 3 3 3-4 3 4V7zM8 8.500a1.500 1.500 0 1 0 0 .01z"/></symbol>
+</defs></svg>
+
+<header>
+  <h1>Index of sound — every screen</h1>
+  <button class="tg2" id="t">◐ light / dark preview</button>
+</header>
+<div class="flow">
+  <b>Flow:</b> Login → <b>Home</b> · <b>Library</b> · <b>Search</b> (3 tabs) → Album / Playlist → tap a song → <b>Now Playing</b> → <b>Queue</b>.
+  Gear on Home → <b>Settings</b> (theme lives there). ⋯ on any song → menu. Swipe a song right → queue. Mini-player sits above the tabs.
+</div>
+
+<div id="app"></div>
+
+<script>
+const ic=(n,s=20)=>`<svg width="${s}" height="${s}"><use href="#${n}"/></svg>`;
+const art=(c,w)=>`<div class="art ${c}" ${w?`style="width:${w}px"`:''}></div>`;
+const coll=cs=>`<div class="collage">${cs.map(c=>art(c)).join('')}</div>`;
+const dots=`<button class="dots">${ic('dots')}</button>`;
+const li=(o)=>`<div class="li ${o.on?'on':''}">${o.col?coll(o.col):art(o.c)}<div class="t"><b>${o.t}</b><span>${o.s}</span>${o.m||''}</div>${o.right===undefined?dots:o.right}</div>`;
+const topbar=(l,r,fg)=>`<div class="top"><span class="${fg?'fg':''}">${l}</span><span class="${fg?'fg':''}">${r}</span></div>`;
+const tabs=a=>`<div class="tabs">${['home','library','search'].map(x=>`<span class="${x===a?'on':''}">${x}</span>`).join('')}</div>`;
+const mini=`<div class="mini">${art('a1')}<div class="t"><b style="font-weight:500">Nights</b><span class="sub" style="display:block">Frank Ocean</span></div>${ic('queue',22)}${ic('pause',26)}</div>`;
+const phone=(body,foot='',over='')=>`<div class="phone"><div class="scroll">${body}</div>${foot}${over}</div>`;
+const fig=(n,cap,html)=>`<figure><figcaption><b>${n}</b> — ${cap}</figcaption>${html}</figure>`;
+const hit=(a)=>`<div class="meta">${a.map(x=>`<i class="${x[1]?'hit':''}">${x[0]}</i>`).join('')}</div>`;
+const sec=(t)=>`<div class="group">${t}</div>`;
+
+const S=[]; // [groupTitle, [figures]]
+
+/* ---- ENTRY ---- */
+S.push(['Entry',[
+ fig('01','login', phone(`
+  <div style="height:100%;display:flex;flex-direction:column;justify-content:center;padding-bottom:40px">
+    <h2 style="font-size:44px;line-height:.95">Index<br>of sound</h2>
+    <div class="sub" style="margin:8px 0 34px">your library, your server</div>
+    <div class="field"><small>server</small>https://jellyfin.home:8096</div>
+    <div class="field"><small>username</small>tej</div>
+    <div class="field"><small>password</small>••••••••</div>
+    <div class="btn solid">Sign in</div>
+    <div class="sub" style="text-align:center;margin-top:14px">remembered · change server</div>
+  </div>`)),
+]]);
+
+/* ---- TABS ---- */
+S.push(['Main tabs',[
+ fig('02','home / recents · swipe mid-gesture', phone(
+  topbar('', `<span class="fg">${ic('gear',22)}</span>`)+`
+  <h2>Good evening</h2><div class="sub" style="margin-bottom:14px">pick up where you left off</div>
+  <div class="tiles">
+   <div class="tile">${coll(['a1','a2','a3','a4'])}<span>Late drive</span></div>
+   <div class="tile">${art('a5')}<span>Sunday kitchen</span></div>
+   <div class="tile">${art('a2')}<span>Mojo</span></div>
+   <div class="tile">${art('a1')}<span>Blonde</span></div>
+   <div class="tile">${coll(['a6','a3','a1','a2'])}<span>Punjabi mellow</span></div>
+   <div class="tile">${art('a4')}<span>Halo Fields</span></div>
+  </div>
+  <div class="sect"><b>Recently played</b><span>swipe → queue</span></div>
+  ${li({c:'a4',t:'Cranes in the Sky',s:'Solange'})}
+  <div class="sw"><div class="bg">${ic('queue')}<span>release to add</span></div><div class="fg">${li({c:'a5',t:'Work',s:'Rihanna'})}</div></div>
+  ${li({c:'a6',t:'Slow burn',s:'Kacey Musgraves'})}
+  ${li({c:'a3',t:'Says',s:'Nils Frahm'})}`, mini+tabs('home'))),
+
+ fig('03','library · playlists', phone(
+  topbar('library', '')+`<h2>Your library</h2>
+  <div class="pills"><span class="pill on">playlists</span><span class="pill">albums</span></div>
+  ${li({col:['a1','a2','a3','a4'],t:'Late drive',s:'Playlist · 24 songs'})}
+  ${li({c:'a5',t:'Sunday kitchen',s:'Playlist · custom cover · 41'})}
+  ${li({col:['a6','a3','a1','a2'],t:'Punjabi mellow',s:'<i class="dl"></i>Playlist · 18 songs'})}
+  ${li({col:['a4','a5','a6','a1'],t:'Gym 2025',s:'Playlist · 60 songs'})}
+  ${li({col:['a2','a3','a4','a5'],t:'Rain',s:'Playlist · 12 songs'})}
+  ${li({c:'a6',t:'Road trip',s:'Playlist · 88 songs'})}
+  ${li({col:['a1','a4','a2','a6'],t:'Old favorites',s:'Playlist · 140 songs'})}`, mini+tabs('library'))),
+
+ fig('04','library · albums', phone(
+  topbar('library', '')+`<h2>Your library</h2>
+  <div class="pills"><span class="pill">playlists</span><span class="pill on">albums</span></div>
+  <div class="grid2">
+   <div>${art('a1')}<div class="cap">Blonde<small>Frank Ocean, 2016</small></div></div>
+   <div>${art('a2')}<div class="cap">Mojo<small>Dil Saeed, 2021</small></div></div>
+   <div>${art('a3')}<div class="cap">Stripes<small>Nils Frahm, 2014</small></div></div>
+   <div>${art('a4')}<div class="cap"><i class="dl"></i>Halo Fields<small>Aya, 2023</small></div></div>
+   <div>${art('a5')}<div class="cap">Anti<small>Rihanna, 2016</small></div></div>
+   <div>${art('a6')}<div class="cap">Wide Open<small>Mazzy Star, 1993</small></div></div>
+  </div>`, mini+tabs('library'))),
+
+ fig('05','search · results with metadata', phone(
+  topbar('search','')+`<div class="search">${ic('srch',18)}<span>2016 <mark>r&amp;b</mark></span></div>
+  <div class="pills" style="margin-top:0"><span class="pill on">library</span><span class="pill">discover</span></div>
+  <div class="sect"><span>songs</span><span>matched on year, genre</span></div>
+  ${li({c:'a1',t:'Nights',s:'Frank Ocean · Blonde',m:hit([['2016',1],['R&B',1],['5:07']])})}
+  ${li({c:'a4',t:'Cranes in the Sky',s:'Solange · A Seat at the Table',m:hit([['2016',1],['R&B',1],['4:10']])})}
+  ${li({c:'a5',t:'Work',s:'Rihanna · Anti',m:hit([['2016',1],['R&B',1],['3:39']])})}
+  <div class="sect"><span>albums</span></div>
+  ${li({c:'a1',t:'Blonde',s:'Album · Frank Ocean · 2016',right:''})}
+  ${li({c:'a6',t:'Anti',s:'Album · Rihanna · 2016',right:''})}`, mini+tabs('search'))),
+
+ fig('06','search · discover (add new music)', phone(
+  topbar('search','')+`<div class="search">${ic('srch',18)}<span>blonde frank ocean</span></div>
+  <div class="pills" style="margin-top:0"><span class="pill">library</span><span class="pill on">discover</span></div>
+  ${li({c:'a1',t:'Blonde',s:'Frank Ocean · 2016 · 17 tracks',right:'<span class="sub">+ add</span>'})}
+  ${li({c:'a2',t:'Endless',s:'Frank Ocean · 2016 · 18 tracks',right:'<span class="sub">+ add</span>'})}
+  ${li({c:'a4',t:'Channel Orange',s:'Frank Ocean · 2012',right:'<span class="sub">✓ in library</span>'})}
+  ${li({c:'a5',t:'Nostalgia, Ultra',s:'Frank Ocean · 2011',right:'<span class="sub">+ add</span>'})}
+  <div style="border:1px solid var(--line);background:var(--card);padding:12px;margin-top:14px">
+   <div>Blonde · 17 tracks</div>
+   <div class="sub">art found · metadata matched · queued for download</div>
+   <div class="track" style="margin-top:10px"><b style="width:64%"></b></div>
+  </div>`, mini+tabs('search'))),
+]]);
+
+/* ---- DETAIL ---- */
+S.push(['Detail pages',[
+ fig('07','playlist', phone(
+  topbar(`<span class="fg">${ic('back',22)}</span>`,'edit')+`
+  <div class="hero">${coll(['a1','a2','a3','a4'])}<div><h2 style="font-size:28px">Late drive</h2><div class="sub">24 songs · 1h 38m</div></div></div>
+  <div class="act">${ic('dl',22)}${ic('shuf',22)}${ic('dots',22)}<span class="play">${ic('play',22)}</span></div>
+  ${li({c:'a1',t:'Nights',s:'Frank Ocean',on:1})}
+  ${li({c:'a2',t:'Mojo',s:'Dil Saeed'})}
+  ${li({c:'a3',t:'Says',s:'Nils Frahm'})}
+  ${li({c:'a4',t:'Halo',s:'Aya'})}
+  ${li({c:'a5',t:'Dust',s:'Mazzy Star'})}
+  ${li({c:'a6',t:'Slow burn',s:'Kacey Musgraves'})}`, mini)),
+
+ fig('08','album', phone(
+  topbar(`<span class="fg">${ic('back',22)}</span>`,'')+`
+  <div style="width:170px;margin:0 auto 14px">${art('a1')}</div>
+  <h2 style="font-size:30px">Blonde</h2>
+  <div class="sub">Frank Ocean · 2016 · R&amp;B · 17 songs</div>
+  <div class="act" style="margin-top:12px">${ic('dl',22)}${ic('heart',22)}${ic('dots',22)}<span class="play">${ic('play',22)}</span></div>
+  <div class="tr on"><i>1</i><span>Nikes</span>${ic('dots')}</div>
+  <div class="tr"><i>2</i><span>Ivy</span>${ic('dots')}</div>
+  <div class="tr"><i>3</i><span>Pink + White</span>${ic('dots')}</div>
+  <div class="tr"><i>4</i><span>Be Yourself</span>${ic('dots')}</div>
+  <div class="tr"><i>5</i><span>Solo</span>${ic('dots')}</div>
+  <div class="tr"><i>6</i><span>Skyline To</span>${ic('dots')}</div>`, mini)),
+
+ fig('09','song info & metadata', phone(
+  topbar(`<span class="fg">${ic('back',22)}</span>`,'')+`
+  <div style="display:flex;gap:14px;align-items:flex-end;margin-bottom:16px">${art('a1',96)}<div><h2 style="font-size:28px">Nights</h2><div class="sub">Frank Ocean</div></div></div>
+  <div class="kv">
+   <span>album</span><span>Blonde</span>
+   <span>year</span><span>2016</span>
+   <span>genre</span><span>R&amp;B</span>
+   <span>label</span><span>Boys Don't Cry</span>
+   <span>track</span><span>9 of 17</span>
+   <span>length</span><span>5:07</span>
+   <span>format</span><span>FLAC · 44.1 kHz</span>
+   <span>bitrate</span><span>1,021 kbps</span>
+   <span>bpm</span><span>86</span>
+   <span>file</span><span>/music/Frank Ocean/Blonde/09.flac</span>
+  </div>
+  <div class="btn" style="margin-top:16px">Refresh metadata</div>`)),
+]]);
+
+/* ---- PLAYER ---- */
+S.push(['Player',[
+ fig('10','now playing', `<div class="phone"><div class="np">
+  <div class="top"><span class="fg">${ic('down',26)}</span><div class="c sub">playing from<br><span style="color:var(--fg)">Late drive</span></div><span class="fg">${ic('dots',22)}</span></div>
+  <div class="car">${art('a5')}${art('a1').replace('class="art a1"','class="art a1 cur"')}${art('a2')}</div>
+  <div class="sub" style="text-align:center;font-size:10px;margin-top:8px">‹ swipe artwork to skip ›</div>
+  <div class="ti"><div><h2>Nights</h2><div class="sub">Frank Ocean</div></div><span style="color:var(--accent)">${ic('heart',26)}</span></div>
+  <div class="scrub"><div class="track"><b></b><u></u></div><div class="times"><span>1:56</span><span>5:07</span></div></div>
+  <div class="ctl"><span class="sub">${ic('shuf',22)}</span><span>${ic('prev',32)}</span><span class="main">${ic('pause',30)}</span><span>${ic('next',32)}</span><span class="sub">${ic('rep',22)}</span></div>
+  <div class="foot">${ic('dev')}<span>FLAC · 44.1 kHz</span>${ic('queue',22)}</div>
+ </div></div>`),
+
+ fig('11','queue', phone(
+  topbar(`<span class="fg">${ic('back',22)}</span>`,'clear queue')+`<h2>Queue</h2>
+  <div class="help"><b>How it works:</b> swipe any song right to add it here. Drag ≡ to reorder, ✕ to remove, tap to play now.</div>
+  <div class="grp"><b>Now playing</b></div>
+  ${li({c:'a1',t:'Nights',s:'Frank Ocean',on:1,right:'<div class="eq"><i></i><i></i><i></i></div>'})}
+  <div class="grp"><b>Next in queue</b><span>2 songs</span></div>
+  <div class="note">You added these. They play first.</div>
+  ${li({c:'a4',t:'Cranes in the Sky',s:'Solange',right:`<span class="sub" style="display:flex;gap:8px">${ic('x',18)}${ic('grip',18)}</span>`})}
+  ${li({c:'a5',t:'Work',s:'Rihanna',right:`<span class="sub" style="display:flex;gap:8px">${ic('x',18)}${ic('grip',18)}</span>`})}
+  <div class="grp"><b>Next from Late drive</b><span>21 songs</span></div>
+  <div class="note">Plays automatically after your queue.</div>
+  ${li({c:'a2',t:'Mojo',s:'Dil Saeed',right:''})}
+  ${li({c:'a3',t:'Says',s:'Nils Frahm',right:''})}
+  ${li({c:'a4',t:'Halo',s:'Aya',right:''})}`)),
+]]);
+
+/* ---- SHEETS & SETTINGS ---- */
+const songSheet=`<div class="dim"></div><div class="sheet">
+  ${li({c:'a2',t:'Mojo',s:'Dil Saeed',right:''})}
+  <div class="it">${ic('heart',22)}Add to Liked</div>
+  <div class="it">${ic('queue',22)}Add to queue</div>
+  <div class="it">${ic('dl',22)}Download</div>
+  <div class="it">${ic('img',22)}Add to playlist…</div>
+  <div class="it">${ic('info',22)}Song info &amp; metadata</div></div>`;
+const plSheet=`<div class="dim"></div><div class="sheet">
+  <div style="margin-bottom:10px">Playlist cover</div>
+  <div class="grid2" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px">
+   <div>${coll(['a1','a2','a3','a4'])}<div class="cap" style="margin-top:4px">auto (first 4)</div></div>
+   <div>${art('a5')}<div class="cap" style="margin-top:4px">photo library</div></div>
+   <div>${art('a6')}<div class="cap" style="margin-top:4px">from album</div></div>
+  </div></div>`;
+const libMenu=`<div class="dim"></div><div class="sheet">
+  ${li({col:['a1','a2','a3','a4'],t:'Late drive',s:'Playlist · 24 songs',right:''})}
+  <div class="it">${ic('heart',22)}Pin to top</div>
+  <div class="it">${ic('dl',22)}Download playlist</div>
+  <div class="it">${ic('img',22)}Change cover</div>
+  <div class="it">${ic('x',22)}Hide from app</div></div>`;
+
+S.push(['Menus & sheets',[
+ fig('12','⋯ on a song', phone(
+  topbar(`<span class="fg">${ic('back',22)}</span>`,'')+`<div class="hero">${coll(['a1','a2','a3','a4'])}<div><h2 style="font-size:28px">Late drive</h2></div></div>
+  ${li({c:'a1',t:'Nights',s:'Frank Ocean',on:1})}${li({c:'a2',t:'Mojo',s:'Dil Saeed'})}${li({c:'a3',t:'Says',s:'Nils Frahm'})}${li({c:'a4',t:'Halo',s:'Aya'})}`,'',songSheet)),
+ fig('13','⋯ on a playlist (library)', phone(
+  topbar('library','')+`<h2>Your library</h2>
+  ${li({col:['a1','a2','a3','a4'],t:'Late drive',s:'Playlist · 24 songs'})}${li({c:'a5',t:'Sunday kitchen',s:'Playlist · 41'})}${li({col:['a6','a3','a1','a2'],t:'Punjabi mellow',s:'Playlist · 18'})}`,'',libMenu)),
+ fig('14','change playlist cover', phone(
+  topbar(`<span class="fg">${ic('back',22)}</span>`,'')+`<div class="hero">${coll(['a1','a2','a3','a4'])}<div><h2 style="font-size:28px">Late drive</h2></div></div>
+  ${li({c:'a1',t:'Nights',s:'Frank Ocean'})}${li({c:'a2',t:'Mojo',s:'Dil Saeed'})}${li({c:'a3',t:'Says',s:'Nils Frahm'})}`,'',plSheet)),
+ fig('15','settings (gear on Home)', phone(
+  topbar(`<span class="fg">${ic('back',22)}</span>`,'')+`<h2>Settings</h2>
+  <div class="grp"><b>Appearance</b></div>
+  <div class="item"><span>Theme</span><div class="seg"><span>Light</span><span>Dark</span><span class="on">System</span></div></div>
+  <div class="grp"><b>Library</b></div>
+  <div class="item"><span>Server<small>jellyfin.home:8096</small></span><span class="v">change ›</span></div>
+  <div class="item"><span>Sync now<small>last synced 2 min ago</small></span><span class="v">↻</span></div>
+  <div class="item"><span>Show Discover on Search</span><div class="tg on"></div></div>
+  <div class="item"><span>Hidden playlists</span><span class="v">2 ›</span></div>
+  <div class="grp"><b>Playback &amp; downloads</b></div>
+  <div class="item"><span>Streaming quality</span><span class="v">Original ›</span></div>
+  <div class="item"><span>Storage used<small>6 playlists</small></span><span class="v">2.3 GB ›</span></div>
+  <div class="grp"><b>Account</b></div>
+  <div class="item"><span class="danger">Sign out</span><span class="v">tej</span></div>`)),
+]]);
+
+document.getElementById('app').innerHTML=S.map(([g,f])=>`<div class="group">${g}</div><div class="row">${f.join('')}</div>`).join('');
+
+const r=document.documentElement;
+document.getElementById('t').onclick=()=>{const d=(r.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark';r.dataset.theme=d?'light':'dark'};
+</script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockups v2 — gallery direction</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--fg:#141414;--mute:#8a867c;--line:#d9d4c8;--card:#ebe7dc;--accent:#d8431f;
+  --mono:"DM Mono",ui-monospace,Menlo,monospace;--serif:"Instrument Serif",Georgia,serif}
+:root[data-theme=dark]{--bg:#0f0f0e;--fg:#ece8dd;--mute:#7d796f;--line:#2a2927;--card:#191917;--accent:#ff6a3d}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f0f0e;--fg:#ece8dd;--mute:#7d796f;--line:#2a2927;--card:#191917;--accent:#ff6a3d}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--fg);font:400 12px/1.5 var(--mono);padding:24px 16px 64px}
+header{max-width:1700px;margin:0 auto 28px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{font:italic 400 28px var(--serif)}
+header p{color:var(--mute)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;border-radius:0}
+header button{border:1px solid var(--line);padding:4px 10px}
+svg{display:block;fill:currentColor}
+.row{max-width:1700px;margin:0 auto;display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+figure{width:300px}
+figcaption{color:var(--mute);margin-bottom:8px}
+.phone{height:640px;border:1px solid var(--line);background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.scroll{flex:1;overflow-y:auto;padding:18px 16px 12px}
+.scroll::-webkit-scrollbar{display:none}
+.top{display:flex;justify-content:space-between;align-items:center;color:var(--mute);margin-bottom:18px}
+h2{font:italic 400 34px/1 var(--serif);margin-bottom:4px}
+.sub{color:var(--mute)}
+.tabs{display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:9px 0;color:var(--mute)}
+.tabs .on{color:var(--fg);border-bottom:1px solid var(--fg)}
+/* art */
+.art{aspect-ratio:1;background:#888;flex:none}
+.a1{background:linear-gradient(135deg,#d8431f,#f2b66d)}
+.a2{background:radial-gradient(circle at 30% 30%,#e9e2cf 0 18%,#2d4a3e 19%)}
+.a3{background:repeating-linear-gradient(90deg,#1b1b1b 0 6px,#e8e1cf 6px 12px)}
+.a4{background:conic-gradient(from 90deg,#3b5ba5,#e8c9d0,#3b5ba5)}
+.a5{background:linear-gradient(#e8c9d0 50%,#7a1f2b 50%)}
+.a6{background:radial-gradient(circle,#f2b66d 0 30%,#1d2a44 31%)}
+.collage{display:grid;grid-template-columns:1fr 1fr;aspect-ratio:1;flex:none}
+/* spotify-style list row: art left, text, ⋯ right */
+.li{display:flex;align-items:center;gap:12px;padding:7px 0}
+.li .art,.li .collage{width:48px}
+.li .t{flex:1;min-width:0}
+.li .t b{font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .t span{color:var(--mute);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li.on .t b{color:var(--accent)}
+.li .dots{padding:8px 2px 8px 10px;color:var(--mute)}
+.dl{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fa86b;margin-right:5px}
+.pills{display:flex;gap:6px;margin-bottom:14px}
+.pill{border:1px solid var(--line);padding:2px 10px;color:var(--mute);border-radius:99px}
+.pill.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.sect{color:var(--mute);margin:16px 0 4px;display:flex;justify-content:space-between}
+.search{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--fg);padding:6px 0;margin-bottom:14px}
+mark{background:none;color:var(--accent)}
+.meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.meta i{font-style:normal;border:1px solid var(--line);padding:0 5px;color:var(--mute);font-size:10px}
+.meta i.hit{border-color:var(--accent);color:var(--accent)}
+.hero{display:flex;gap:14px;align-items:flex-end;margin-bottom:14px}
+.hero .collage{width:120px}
+.act{display:flex;gap:18px;align-items:center;margin:4px 0 8px;color:var(--mute)}
+.act .play{margin-left:auto;width:46px;height:46px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center}
+/* bottom sheet */
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--fg);padding:14px 16px 8px}
+.sheet .li{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:6px}
+.sheet .it{display:flex;gap:14px;align-items:center;padding:10px 0}
+.sheet .it svg{color:var(--mute)}
+.mini{border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:10px;align-items:center}
+.mini .art{width:36px}.mini .t{flex:1;min-width:0}
+/* now playing */
+.np{padding:14px 0 12px;display:flex;flex-direction:column;height:100%}
+.np .top{padding:0 16px;margin-bottom:10px}
+.np .top .c{text-align:center;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:0 28px;gap:12px}
+.car::-webkit-scrollbar{display:none}
+.car .art{width:244px;scroll-snap-align:center;transition:transform .25s,opacity .25s;opacity:.35;transform:scale(.88)}
+.car .art.cur{opacity:1;transform:none;box-shadow:0 18px 40px -18px rgba(0,0,0,.5)}
+.hint{text-align:center;color:var(--mute);font-size:10px;margin-top:8px}
+.ti{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0}
+.ti h2{font-size:30px;margin:0}
+.ti .heart{color:var(--accent)}
+.scrub{padding:14px 20px 0}
+.track{height:3px;background:var(--line);position:relative;cursor:pointer}
+.track b{position:absolute;left:0;top:0;bottom:0;background:var(--fg)}
+.track u{position:absolute;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--fg);transform:translateX(-50%)}
+.times{display:flex;justify-content:space-between;color:var(--mute);font-size:10px;margin-top:8px}
+.ctl{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 0}
+.ctl button{width:44px;height:44px;display:grid;place-items:center;color:var(--fg)}
+.ctl .dim2{color:var(--mute)}
+.ctl .on{color:var(--accent)}
+.ctl .main{width:64px;height:64px;border-radius:50%;background:var(--fg);color:var(--bg)}
+.ctl button:active{transform:scale(.92)}
+.foot{display:flex;justify-content:space-between;padding:12px 24px 0;color:var(--mute);margin-top:auto}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10-6.5a1 1 0 0 0 0-1.72l-10-6.5A1 1 0 0 0 8 5.5z"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.5" height="14" rx="1"/><rect x="13.5" y="5" width="4.5" height="14" rx="1"/></symbol>
+  <symbol id="prev" viewBox="0 0 24 24"><rect x="5" y="5" width="2.4" height="14" rx="1"/><path d="M19 6.2v11.6a.9.9 0 0 1-1.4.75l-8.4-5.8a.9.9 0 0 1 0-1.5l8.4-5.8A.9.9 0 0 1 19 6.2z"/></symbol>
+  <symbol id="next" viewBox="0 0 24 24"><rect x="16.6" y="5" width="2.4" height="14" rx="1"/><path d="M5 6.2v11.6a.9.9 0 0 0 1.4.75l8.4-5.8a.9.9 0 0 0 0-1.5L6.4 5.45A.9.9 0 0 0 5 6.2z"/></symbol>
+  <symbol id="shuf" viewBox="0 0 24 24"><path d="M16 4h4v4l-1.6-1.6-4.2 4.2-1.4-1.4 4.2-4.2zM4 6h3.5c1.2 0 2.3.5 3 1.4l7 8.6 1.5-1.5L20 16v4h-4l1.6-1.6-1.2-1.4-6.6-8.2C9.4 8.3 9 8 8 8H4zM4 16h4l2-2.5 1.3 1.7L9.2 18H4z"/></symbol>
+  <symbol id="rep" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></symbol>
+  <symbol id="heart" viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.800-8 11-8 11z"/></symbol>
+  <symbol id="queue" viewBox="0 0 24 24"><path d="M3 6h14v2H3zm0 5h14v2H3zm0 5h9v2H3zm14 0v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></symbol>
+  <symbol id="dev" viewBox="0 0 24 24"><path d="M4 4h16v11H4zm2 2v7h12V6zM9 17h6v2H9z"/></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="M12 16 5 9l1.4-1.4L12 13.2l5.6-5.6L19 9z"/></symbol>
+  <symbol id="dl" viewBox="0 0 24 24"><path d="M11 4h2v9l3.5-3.5L18 11l-6 6-6-6 1.500-1.500L11 13zM5 19h14v2H5z"/></symbol>
+  <symbol id="info" viewBox="0 0 24 24"><path d="M11 10h2v7h-2zm0-3h2v2h-2zM12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16z"/></symbol>
+  <symbol id="srch" viewBox="0 0 24 24"><path d="M10 3a7 7 0 0 1 5.600 11.200L21 19.600 19.600 21l-5.400-5.400A7 7 0 1 1 10 3zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></symbol>
+</defs></svg>
+
+<header>
+  <h1>Index of sound — mockups v2</h1>
+  <p>list rows · song search · now playing · <button id="t">◐ light / dark</button></p>
+</header>
+
+<div class="row">
+
+<!-- 1 LIBRARY -->
+<figure><figcaption>01 — library (art left, ⋯ right)</figcaption>
+<div class="phone"><div class="scroll">
+  <div class="top"><span>library</span><span>◐</span></div>
+  <h2>Your library</h2>
+  <div class="pills" style="margin-top:12px"><span class="pill on">playlists</span><span class="pill">albums</span><span class="pill">artists</span></div>
+  <div class="li"><div class="collage"><div class="art a1"></div><div class="art a2"></div><div class="art a3"></div><div class="art a4"></div></div><div class="t"><b>Late drive</b><span>Playlist · 24 songs</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a5"></div><div class="t"><b>Sunday kitchen</b><span>Playlist · custom cover · 41</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="collage"><div class="art a6"></div><div class="art a3"></div><div class="art a1"></div><div class="art a2"></div></div><div class="t"><b>Punjabi mellow</b><span><i class="dl"></i>Playlist · 18 songs</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="collage"><div class="art a4"></div><div class="art a5"></div><div class="art a6"></div><div class="art a1"></div></div><div class="t"><b>Gym 2025</b><span>Playlist · 60 songs</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="collage"><div class="art a2"></div><div class="art a3"></div><div class="art a4"></div><div class="art a5"></div></div><div class="t"><b>Rain</b><span>Playlist · 12 songs</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a6"></div><div class="t"><b>Road trip</b><span>Playlist · 88 songs</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="collage"><div class="art a1"></div><div class="art a4"></div><div class="art a2"></div><div class="art a6"></div></div><div class="t"><b>Old favorites</b><span>Playlist · 140 songs</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+</div>
+<div class="mini"><div class="art a1"></div><div class="t"><b style="font-weight:500">Nights</b><span class="sub" style="display:block">Frank Ocean</span></div><svg width="26" height="26"><use href="#pause"/></svg></div>
+<div class="tabs"><span>home</span><span class="on">library</span><span>search</span><span>settings</span></div>
+</div></figure>
+
+<!-- 2 PLAYLIST SONGS + MENU -->
+<figure><figcaption>02 — playlist songs, ⋯ opens menu</figcaption>
+<div class="phone"><div class="scroll">
+  <div class="top"><span>← library</span><span></span></div>
+  <div class="hero"><div class="collage"><div class="art a1"></div><div class="art a2"></div><div class="art a3"></div><div class="art a4"></div></div>
+    <div><h2 style="font-size:28px">Late drive</h2><div class="sub">24 songs · 1h 38m</div></div></div>
+  <div class="act"><svg width="22" height="22"><use href="#dl"/></svg><svg width="22" height="22"><use href="#shuf"/></svg><svg width="22" height="22"><use href="#dots"/></svg><button class="play"><svg width="22" height="22"><use href="#play"/></svg></button></div>
+  <div class="li on"><div class="art a1" style="width:44px"></div><div class="t"><b>Nights</b><span>Frank Ocean</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a2" style="width:44px"></div><div class="t"><b>Mojo</b><span>Dil Saeed</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a3" style="width:44px"></div><div class="t"><b>Says</b><span>Nils Frahm</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a4" style="width:44px"></div><div class="t"><b>Halo</b><span>Aya</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a5" style="width:44px"></div><div class="t"><b>Dust</b><span>Mazzy Star</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a6" style="width:44px"></div><div class="t"><b>Slow burn</b><span>Kacey Musgraves</span></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="li"><div class="art a2" style="width:44px"></div><div class="t"><b>Mojo</b><span>Dil Saeed</span></div></div>
+    <div class="it"><svg width="22" height="22"><use href="#heart"/></svg>Add to Liked</div>
+    <div class="it"><svg width="22" height="22"><use href="#queue"/></svg>Add to queue</div>
+    <div class="it"><svg width="22" height="22"><use href="#dl"/></svg>Download</div>
+    <div class="it"><svg width="22" height="22"><use href="#info"/></svg>Song info &amp; metadata</div>
+  </div>
+</div></div></figure>
+
+<!-- 3 SEARCH -->
+<figure><figcaption>03 — search: art + metadata matches</figcaption>
+<div class="phone"><div class="scroll">
+  <div class="top"><span>search</span><span>◐</span></div>
+  <div class="search"><svg width="18" height="18"><use href="#srch"/></svg><span>2016 <mark>r&amp;b</mark>_</span></div>
+  <div class="pills"><span class="pill on">all</span><span class="pill">songs</span><span class="pill">albums</span><span class="pill">playlists</span></div>
+  <div class="sect"><span>songs</span><span>matched on year, genre</span></div>
+  <div class="li"><div class="art a1" style="width:48px"></div><div class="t"><b>Nights</b><span>Frank Ocean · Blonde</span><div class="meta"><i class="hit">2016</i><i class="hit">R&amp;B</i><i>5:07</i></div></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a4" style="width:48px"></div><div class="t"><b>Cranes in the Sky</b><span>Solange · A Seat at the Table</span><div class="meta"><i class="hit">2016</i><i class="hit">R&amp;B</i><i>4:10</i></div></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="li"><div class="art a5" style="width:48px"></div><div class="t"><b>Work</b><span>Rihanna · Anti</span><div class="meta"><i class="hit">2016</i><i class="hit">R&amp;B</i><i>3:39</i></div></div><button class="dots"><svg width="20" height="20"><use href="#dots"/></svg></button></div>
+  <div class="sect"><span>albums</span><span></span></div>
+  <div class="li"><div class="art a1" style="width:48px"></div><div class="t"><b>Blonde</b><span>Album · Frank Ocean · 2016</span></div></div>
+  <div class="li"><div class="art a6" style="width:48px"></div><div class="t"><b>Anti</b><span>Album · Rihanna · 2016</span></div></div>
+  <div class="sect"><span>searchable fields</span></div>
+  <div class="meta"><i>title</i><i>artist</i><i>album</i><i>year</i><i>genre</i><i>label</i><i>composer</i><i>lyrics</i><i>bpm</i></div>
+</div>
+<div class="tabs"><span>home</span><span>library</span><span class="on">search</span><span>settings</span></div>
+</div></figure>
+
+<!-- 4 NOW PLAYING -->
+<figure><figcaption>04 — now playing (swipe the art · try the buttons)</figcaption>
+<div class="phone"><div class="np">
+  <div class="top"><button><svg width="26" height="26"><use href="#down"/></svg></button><div class="c sub">playing from<br><span style="color:var(--fg)">Late drive</span></div><button><svg width="22" height="22"><use href="#dots"/></svg></button></div>
+  <div class="car" id="car"></div>
+  <div class="hint">‹ swipe artwork to skip ›</div>
+  <div class="ti"><div><h2 id="ttl">Nights</h2><div class="sub" id="art">Frank Ocean</div></div><button class="heart" id="heart"><svg width="26" height="26"><use href="#heart"/></svg></button></div>
+  <div class="scrub"><div class="track" id="trk"><b id="fill"></b><u id="knob"></u></div><div class="times"><span id="cur">0:00</span><span id="tot">5:07</span></div></div>
+  <div class="ctl">
+    <button class="dim2" id="shuf"><svg width="22" height="22"><use href="#shuf"/></svg></button>
+    <button id="prev"><svg width="32" height="32"><use href="#prev"/></svg></button>
+    <button class="main" id="pp"><svg width="30" height="30" id="ppi"><use href="#pause"/></svg></button>
+    <button id="next"><svg width="32" height="32"><use href="#next"/></svg></button>
+    <button class="dim2" id="rep"><svg width="22" height="22"><use href="#rep"/></svg></button>
+  </div>
+  <div class="foot"><svg width="20" height="20"><use href="#dev"/></svg><span id="fmt">FLAC · 44.1 kHz</span><svg width="22" height="22"><use href="#queue"/></svg></div>
+</div></div></figure>
+
+</div>
+
+<script>
+const r=document.documentElement;
+document.getElementById('t').onclick=()=>{const d=(r.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark';r.dataset.theme=d?'light':'dark'};
+
+// now-playing demo
+const T=[
+ {t:'Nights',a:'Frank Ocean',c:'a1',d:307,f:'FLAC · 44.1 kHz'},
+ {t:'Mojo',a:'Dil Saeed',c:'a2',d:222,f:'MP3 · 320 kbps'},
+ {t:'Says',a:'Nils Frahm',c:'a3',d:501,f:'FLAC · 96 kHz'},
+ {t:'Halo',a:'Aya',c:'a4',d:250,f:'FLAC · 44.1 kHz'},
+ {t:'Dust',a:'Mazzy Star',c:'a5',d:213,f:'AAC · 256 kbps'}];
+let i=0,pos=0,playing=true,seeking=false;
+const $=id=>document.getElementById(id),car=$('car');
+car.innerHTML=T.map(x=>`<div class="art ${x.c}"></div>`).join('');
+const arts=[...car.children];
+const mmss=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+function show(n,scroll){
+  i=(n+T.length)%T.length;pos=0;const x=T[i];
+  $('ttl').textContent=x.t;$('art').textContent=x.a;$('fmt').textContent=x.f;$('tot').textContent=mmss(x.d);
+  arts.forEach((e,k)=>e.classList.toggle('cur',k===i));
+  if(scroll)arts[i].scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+}
+let st;car.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{
+  const m=car.getBoundingClientRect(),mid=m.left+m.width/2;
+  let b=0,bd=1e9;arts.forEach((e,k)=>{const q=e.getBoundingClientRect(),d=Math.abs(q.left+q.width/2-mid);if(d<bd){bd=d;b=k}});
+  if(b!==i)show(b,false)},80)});
+$('next').onclick=()=>show(i+1,true);
+$('prev').onclick=()=>{pos>3?show(i,false):show(i-1,true)};
+$('pp').onclick=()=>{playing=!playing;$('ppi').innerHTML=`<use href="#${playing?'pause':'play'}"/>`};
+$('heart').onclick=e=>{const s=e.currentTarget;s.style.color=s.style.color==='var(--mute)'?'':'var(--mute)'};
+['shuf','rep'].forEach(k=>$(k).onclick=()=>$(k).classList.toggle('on'));
+$('trk').onclick=e=>{const b=$('trk').getBoundingClientRect();pos=(e.clientX-b.left)/b.width*T[i].d};
+setInterval(()=>{if(!playing)return;pos+=1;if(pos>=T[i].d)show(i+1,true);
+  const p=pos/T[i].d*100;$('fill').style.width=p+'%';$('knob').style.left=p+'%';$('cur').textContent=mmss(pos)},1000);
+show(0,false);arts[0].scrollIntoView({inline:'center',block:'nearest'});
+</script>
+</body>
+</html>
