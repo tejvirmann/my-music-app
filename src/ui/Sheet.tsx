@@ -35,11 +35,11 @@ export function Sheet({ visible, onClose, children }: { visible: boolean; onClos
   );
 }
 
-export function SheetHeader({ art, title, sub }: { art?: string; title: string; sub?: string }) {
+export function SheetHeader({ art, title, sub, cover }: { art?: string; title: string; sub?: string; cover?: React.ReactNode }) {
   const c = useColors();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 12, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: c.line }}>
-      <Art uri={art} size={44} />
+      {cover ? <View style={{ width: 44, height: 44 }}>{cover}</View> : <Art uri={art} size={44} />}
       <View style={{ flex: 1 }}>
         <Txt v="med" numberOfLines={1}>{title}</Txt>
         {!!sub && <Txt v="mute" numberOfLines={1}>{sub}</Txt>}

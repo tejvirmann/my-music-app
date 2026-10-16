@@ -7,6 +7,7 @@ import { useAuth } from '../state/auth';
 import { useSettings } from '../state/settings';
 import { useAppTitle } from '../brand';
 import { Art } from '../ui/Art';
+import { PlaylistCover } from '../ui/PlaylistCover';
 import { Logo } from '../ui/Brand';
 import { Body, Empty, Heading, IconBtn, Screen, Section, TopBar } from '../ui/layout';
 import { SongRow } from '../ui/SongRow';
@@ -14,11 +15,11 @@ import { Txt } from '../ui/text';
 import { F, useColors } from '../ui/theme';
 import { greeting, usePlaylists } from './hooks';
 
-function Tile({ art, title, onPress }: { art: string; title: string; onPress: () => void }) {
+function Tile({ art, cover, title, onPress }: { art?: string; cover?: React.ReactNode; title: string; onPress: () => void }) {
   const c = useColors();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ flexBasis: '48.5%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: pressed ? c.line : c.card })}>
-      <Art uri={art} size={46} />
+      {cover ? <View style={{ width: 46, height: 46 }}>{cover}</View> : <Art uri={art} size={46} />}
       <Txt v="med" numberOfLines={2} style={{ flex: 1, paddingRight: 8, lineHeight: 16 }}>{title}</Txt>
     </Pressable>
   );
@@ -37,7 +38,7 @@ export function HomeScreen({ navigation }: any) {
   const refresh = () => { albums.refetch(); added.refetch(); pl.refetch(); };
 
   const tiles = [
-    ...pl.items.slice(0, 3).map((p) => ({ key: `p${p.Id}`, art: client.imageUrl(p.Id, 160), title: p.Name, go: () => navigation.navigate('Playlist', { id: p.Id, name: p.Name }) })),
+    ...pl.items.slice(0, 3).map((p) => ({ key: `p${p.Id}`, cover: <PlaylistCover id={p.Id} name={p.Name} size={46} />, title: p.Name, go: () => navigation.navigate('Playlist', { id: p.Id, name: p.Name }) })),
     ...(albums.data?.Items ?? []).slice(0, 3).map((a) => ({ key: `a${a.Id}`, art: client.imageUrl(a.Id, 160), title: a.Name, go: () => navigation.navigate('Album', { id: a.Id, name: a.Name }) })),
   ];
 
@@ -48,7 +49,7 @@ export function HomeScreen({ navigation }: any) {
         right={<IconBtn name="gear" label="Settings" onPress={() => navigation.navigate('Settings')} />} />
       <Body refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.mute} />}>
         {showGreeting && <Heading title={greetingText.trim() || greeting()} />}
-        {tiles.length > 0 && <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{tiles.map((t) => <Tile key={t.key} art={t.art} title={t.title} onPress={t.go} />)}</View>}
+        {tiles.length > 0 && <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{tiles.map((t) => <Tile key={t.key} art={"art" in t ? t.art : undefined} cover={"cover" in t ? t.cover : undefined} title={t.title} onPress={t.go} />)}</View>}
 
         {recent.length > 0 ? (
           <>

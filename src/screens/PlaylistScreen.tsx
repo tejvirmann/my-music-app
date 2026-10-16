@@ -5,7 +5,7 @@ import { toggleDownload } from '../downloadActions';
 import { useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
 import { playNow } from '../player/queue';
 import { useAuth } from '../state/auth';
-import { Art } from '../ui/Art';
+import { PlaylistCover } from '../ui/PlaylistCover';
 import { Icon } from '../ui/Icon';
 import { Body, Empty, IconBtn, Screen, TopBar } from '../ui/layout';
 import { SongRow } from '../ui/SongRow';
@@ -34,7 +34,7 @@ export function PlaylistScreen({ route, navigation }: any) {
       <TopBar onBack={() => navigation.goBack()} />
       <Body>
         <View style={{ flexDirection: 'row', gap: 14, alignItems: 'flex-end', marginBottom: 14 }}>
-          <Art uri={client.imageUrl(id, 320)} size={120} />
+          <PlaylistCover id={id} name={name} size={120} />
           <View style={{ flex: 1 }}>
             <Txt v="h2" style={{ fontSize: 28, lineHeight: 30 }} numberOfLines={3}>{name}</Txt>
             <Txt v="mute" style={{ marginTop: 4 }}>{tracks.length} songs{mins ? ` · ${mins} min` : ''}</Txt>

@@ -10,7 +10,9 @@ import { navigate } from '../navigation/ref';
 import { addToQueue, playNext } from '../player/queue';
 import { useAuth } from '../state/auth';
 import { useLibraryPrefs } from '../state/library';
+import { useCovers, clearCover, pickCover } from '../state/covers';
 import { Art } from './Art';
+import { PlaylistCover } from './PlaylistCover';
 import { Icon } from './Icon';
 import { Sheet, SheetHeader, SheetItem } from './Sheet';
 import { Txt } from './text';
@@ -108,7 +110,7 @@ function AddToPlaylist({ ids, title, sub, art }: { ids: string[]; title: string;
       </Pressable>
       {data?.Items.filter((p) => !hidden.includes(p.Id)).map((p) => (
         <Pressable key={p.Id} onPress={() => add(p.Id, p.Name)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, opacity: pressed ? 0.5 : 1 })}>
-          <Art uri={client.imageUrl(p.Id, 160)} size={44} />
+          <PlaylistCover id={p.Id} name={p.Name} size={44} />
           <View style={{ flex: 1 }}>
             <Txt numberOfLines={1}>{p.Name}</Txt>
             <Txt v="small">{p.ChildCount ?? 0} songs</Txt>
@@ -123,13 +125,16 @@ function PlaylistSheet({ item }: { item: JfItem }) {
   const client = useAuth((a) => a.client)!;
   const { pinned, hidden, togglePin, toggleHide } = useLibraryPrefs();
   const dl = useDownloadedPlaylists().has(item.Id);
+  const custom = useCovers((s) => s.map[item.Id]);
   const all = async () => (await client.playlistTracks(item.Id)).Items;
   return (
     <>
-      <SheetHeader art={client.imageUrl(item.Id, 160)} title={item.Name} sub={`Playlist · ${item.ChildCount ?? 0} songs`} />
+      <SheetHeader cover={<PlaylistCover id={item.Id} name={item.Name} size={44} />} title={item.Name} sub={`Playlist · ${item.ChildCount ?? 0} songs`} />
       <SheetItem icon="pin" label={pinned.includes(item.Id) ? 'Unpin' : 'Pin to top'} onPress={run(() => { togglePin(item.Id); toast(pinned.includes(item.Id) ? 'Unpinned' : 'Pinned to top'); })} />
       <SheetItem icon="dl" label={dl ? 'Remove download' : 'Download playlist'} onPress={run(() => toggleDownload(client, 'playlist', item.Id, item.Name, dl))} />
       <SheetItem icon="queue" label="Add to queue" onPress={run(async () => { const n = await addToQueue(client, await all()); toast('Added to queue', `${n} up next`); })} />
+      <SheetItem icon="img" label="Set cover image…" onPress={run(() => pickCover(item.Id).then((ok) => ok && toast('Cover updated')).catch((e) => Alert.alert('Could not set cover', e.message)))} />
+      {!!custom && <SheetItem icon="x" label="Remove cover image" onPress={run(() => { clearCover(item.Id); toast('Cover removed'); })} />}
       <SheetItem icon="x" label={hidden.includes(item.Id) ? 'Show in app' : 'Hide from app'} onPress={run(() => { toggleHide(item.Id); toast(hidden.includes(item.Id) ? 'Playlist shown' : 'Hidden · still on Jellyfin'); })} />
     </>
   );

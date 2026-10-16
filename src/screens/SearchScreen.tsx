@@ -13,6 +13,7 @@ import { SongRow } from '../ui/SongRow';
 import { Txt } from '../ui/text';
 import { F, useColors } from '../ui/theme';
 import { toast } from '../ui/toast';
+import { PlaylistCover } from '../ui/PlaylistCover';
 import { Discover } from './Discover';
 import { usePlaylists } from './hooks';
 
@@ -142,7 +143,7 @@ export function SearchScreen({ navigation }: any) {
                 <Section title="Playlists" />
                 <View style={{ marginHorizontal: -16 }}>
                   {playlists.slice(0, 4).map((p) => (
-                    <ListRow key={p.Id} art={client.imageUrl(p.Id, 160)} title={p.Name} sub={`Playlist · ${p.ChildCount ?? 0} songs`}
+                    <ListRow key={p.Id} cover={<PlaylistCover id={p.Id} name={p.Name} size={44} />} title={p.Name} sub={`Playlist · ${p.ChildCount ?? 0} songs`}
                       onPress={() => navigation.navigate('Playlist', { id: p.Id, name: p.Name })}
                       swipe={() => client.playlistTracks(p.Id).then((r) => addToQueue(client, r.Items)).then((n) => toast('Playlist added to queue', `${n} up next`))} />
                   ))}

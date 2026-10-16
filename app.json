@@ -53,6 +53,12 @@
             }
           }
         ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a cover image for your playlists."
+        }
       ]
     ]
   }

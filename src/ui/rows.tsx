@@ -68,10 +68,10 @@ export function DlDot() {
 export const ROW_H = 60;
 
 /** Standard list row: square art, title + subtitle, optional offline dot, trailing slot. */
-export function ListRow({ art, title, sub, subExtra, dl, active, onPress, onLongPress, right, swipe, swipeLabel, noArt, lead, titleNode }: {
+export function ListRow({ art, title, sub, subExtra, dl, active, onPress, onLongPress, right, swipe, swipeLabel, noArt, lead, titleNode, cover }: {
   art?: string; title: string; sub?: string; subExtra?: React.ReactNode; dl?: boolean; active?: boolean;
   onPress?: () => void; onLongPress?: () => void; right?: React.ReactNode;
-  swipe?: () => void; swipeLabel?: string; noArt?: boolean; lead?: React.ReactNode; titleNode?: React.ReactNode;
+  swipe?: () => void; swipeLabel?: string; noArt?: boolean; lead?: React.ReactNode; titleNode?: React.ReactNode; cover?: React.ReactNode;
 }) {
   const c = useColors();
   const row = (
@@ -79,7 +79,7 @@ export function ListRow({ art, title, sub, subExtra, dl, active, onPress, onLong
       flexDirection: 'row', alignItems: 'center', gap: 12, height: ROW_H, paddingHorizontal: 16, backgroundColor: pressed ? c.card : 'transparent',
     })}>
       {lead}
-      {!noArt && <Art uri={art} size={44} />}
+      {cover ? <View style={{ width: 44, height: 44 }}>{cover}</View> : !noArt && <Art uri={art} size={44} />}
       <View style={{ flex: 1, minWidth: 0 }}>
         {titleNode ?? <Txt v="med" numberOfLines={1} color={active ? c.accent : c.fg}>{title}</Txt>}
         {(!!sub || dl || subExtra) && (

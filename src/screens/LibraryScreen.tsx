@@ -8,6 +8,7 @@ import { dlKey } from '../downloadActions';
 import { useDownloadedPlaylists, useDownloadProgress } from '../downloads';
 import { useAuth } from '../state/auth';
 import { useLibraryPrefs } from '../state/library';
+import { PlaylistCover } from '../ui/PlaylistCover';
 import { Art } from '../ui/Art';
 import { Empty, Heading, IconBtn, Pill, Screen, TopBar } from '../ui/layout';
 import { DlDot, ListRow } from '../ui/rows';
@@ -26,7 +27,7 @@ function PlaylistRow({ item, pinned, onOpen }: { item: JfItem; pinned: boolean; 
   const progress = useDownloadProgress(item.Id);
   const sub = [pinned && 'pinned', 'Playlist', `${item.ChildCount ?? 0} songs`, progress && `downloading ${progress}`].filter(Boolean).join(' · ');
   return (
-    <ListRow art={client.imageUrl(item.Id, 160)} title={item.Name} sub={sub} dl={dl} onPress={onOpen} onLongPress={() => openPlaylistMenu(item)}
+    <ListRow cover={<PlaylistCover id={item.Id} name={item.Name} size={44} />} title={item.Name} sub={sub} dl={dl} onPress={onOpen} onLongPress={() => openPlaylistMenu(item)}
       right={<IconBtn name="dots" label="More" color={c.mute} onPress={() => openPlaylistMenu(item)} />} />
   );
 }
