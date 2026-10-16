@@ -17,6 +17,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Select newest Xcode (Expo SDK 58 needs Swift 6.2+)
+        run: |
+          ls -d /Applications/Xcode_*.app
+          XC=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+          swift --version
       - run: npm ci
       - run: npx expo prebuild --platform ios --no-install
       - name: Install pods
