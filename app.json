@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.tejvirmann.mymusic",
@@ -39,7 +39,9 @@
           }
         }
       ],
-      "expo-image"
+      "expo-image",
+      "expo-font",
+      ["expo-image-picker", { "photosPermission": "Choose a photo to use as the app image." }]
     ]
   }
 }

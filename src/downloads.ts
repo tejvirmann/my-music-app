@@ -1,5 +1,4 @@
 import * as SQLite from 'expo-sqlite';
-import { useMemo } from 'react';
 import { create } from 'zustand';
 import { Image } from 'expo-image';
 import { Directory, File, Paths } from 'expo-file-system';
@@ -29,15 +28,21 @@ const setProgress = (id: string, v?: string) =>
     return { progress, rev: s.rev + 1 };
   });
 
-/** Ids of playlists whose download finished. Re-renders when downloads change. */
+/** One SQL read per change, shared by every row on screen (rows used to each query on every progress tick). */
+const memo = <T,>(read: () => T) => {
+  let rev = -1, val: T;
+  return (r: number) => { if (r !== rev) { val = read(); rev = r; } return val; };
+};
+const playlistSet = memo(() => new Set(db.getAllSync<{ playlist_id: string }>('SELECT playlist_id FROM downloaded_playlists').map((r) => r.playlist_id)));
+const trackSet = memo(() => new Set(db.getAllSync<{ id: string }>('SELECT id FROM tracks').map((r) => r.id)));
+
+/** Keys of playlists / albums / songs whose download finished. Re-renders when downloads change. */
 export function useDownloadedPlaylists(): Set<string> {
-  const rev = useStore((s) => s.rev);
-  return useMemo(() => new Set(db.getAllSync<{ playlist_id: string }>('SELECT playlist_id FROM downloaded_playlists').map((r) => r.playlist_id)), [rev]);
+  return playlistSet(useStore((s) => s.rev));
 }
 /** Ids of tracks stored on the device. */
 export function useDownloadedTracks(): Set<string> {
-  const rev = useStore((s) => s.rev);
-  return useMemo(() => new Set(db.getAllSync<{ id: string }>('SELECT id FROM tracks').map((r) => r.id)), [rev]);
+  return trackSet(useStore((s) => s.rev));
 }
 /** "3/20" while a playlist is downloading, else undefined. */
 export const useDownloadProgress = (playlistId: string): string | undefined => useStore((s) => s.progress[playlistId]);

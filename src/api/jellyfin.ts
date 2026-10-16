@@ -64,7 +64,7 @@ export class JellyfinClient {
   albums(startIndex = 0, limit = 100, search?: string) {
     const q = new URLSearchParams({
       IncludeItemTypes: 'MusicAlbum', Recursive: 'true', SortBy: 'SortName',
-      Fields: 'ChildCount', StartIndex: String(startIndex), Limit: String(limit),
+      Fields: 'ChildCount,ProductionYear', StartIndex: String(startIndex), Limit: String(limit),
     });
     if (search) q.set('SearchTerm', search);
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
@@ -72,7 +72,7 @@ export class JellyfinClient {
 
   albumTracks(albumId: string) {
     const q = new URLSearchParams({
-      ParentId: albumId, IncludeItemTypes: 'Audio', SortBy: 'ParentIndexNumber,IndexNumber',
+      ParentId: albumId, IncludeItemTypes: 'Audio', SortBy: 'ParentIndexNumber,IndexNumber', Fields: 'Genres,ProductionYear',
     });
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
   }
@@ -82,6 +82,29 @@ export class JellyfinClient {
       IncludeItemTypes: 'Audio', Recursive: 'true', SearchTerm: term, Limit: '50',
     });
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+  }
+
+  /** Whole song list (paged) for the on-device search index. Only the fields search needs. */
+  async allSongs() {
+    const out: JfItem[] = [];
+    for (let i = 0; ; i += 2000) {
+      const q = new URLSearchParams({
+        IncludeItemTypes: 'Audio', Recursive: 'true', SortBy: 'SortName', Fields: 'Genres,ProductionYear',
+        StartIndex: String(i), Limit: '2000', EnableImages: 'false',
+      });
+      const r = await this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+      out.push(...r.Items);
+      if (out.length >= r.TotalRecordCount || !r.Items.length) return out;
+    }
+  }
+
+  async allAlbums() {
+    const out: JfItem[] = [];
+    for (let i = 0; ; i += 2000) {
+      const r = await this.albums(i, 2000);
+      out.push(...r.Items);
+      if (out.length >= r.TotalRecordCount || !r.Items.length) return out;
+    }
   }
 
   recentAlbums(limit = 20) {

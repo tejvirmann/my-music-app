@@ -1,11 +1,37 @@
-import TrackPlayer, { type Track } from 'react-native-track-player';
+import { useEffect } from 'react';
+import TrackPlayer, { Event, RepeatMode, type Track } from 'react-native-track-player';
+import { create } from 'zustand';
 
 import type { JellyfinClient } from '../api/jellyfin';
 import type { JfItem } from '../api/types';
 import { localPath } from '../downloads';
 
+/** `queued` marks tracks the user added by hand ("Next in queue"), as opposed to the rest of the playing list. */
+export type QTrack = Track & { queued?: boolean; albumId?: string };
+
+/** Mirror of the native queue so screens can render it. Refreshed after every mutation and on track change. */
+export const usePlayer = create<{ tracks: QTrack[]; index: number; ctxName: string; shuffle: boolean }>(() => ({
+  tracks: [], index: -1, ctxName: '', shuffle: false,
+}));
+/** Upcoming context tracks in their pre-shuffle order, so turning shuffle off can restore it. */
+let originalOrder: string[] = [];
+
+export async function syncQueue() {
+  const [tracks, index] = await Promise.all([TrackPlayer.getQueue(), TrackPlayer.getActiveTrackIndex()]);
+  usePlayer.setState({ tracks: tracks as QTrack[], index: index ?? -1 });
+}
+
+/** Mount once. */
+export function useQueueSync() {
+  useEffect(() => {
+    syncQueue().catch(() => {});
+    const sub = TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, () => syncQueue().catch(() => {}));
+    return () => sub.remove();
+  }, []);
+}
+
 /** Prefers the downloaded file; otherwise streams directly from Jellyfin. */
-export function toTrack(client: JellyfinClient, t: JfItem): Track {
+export function toTrack(client: JellyfinClient, t: JfItem, queued = false): QTrack {
   const art = t.AlbumId ?? t.Id;
   return {
     id: t.Id,
@@ -14,33 +40,89 @@ export function toTrack(client: JellyfinClient, t: JfItem): Track {
     artist: t.Artists?.join(', ') ?? t.AlbumArtist ?? '',
     album: t.Album,
     albumId: t.AlbumId,
-    artwork: client.imageUrl(art, 600),
+    artwork: client.imageUrl(art, 640),
     duration: t.RunTimeTicks ? t.RunTimeTicks / 10_000_000 : undefined,
+    queued,
   };
 }
 
-/** Play Now: replaces the queue and starts at `index`. */
-export async function playNow(client: JellyfinClient, items: JfItem[], index = 0) {
+/** Rebuild a song record from the native track (for menus and history). */
+export function trackToItem(t: Track): JfItem {
+  return {
+    Id: String(t.id), Name: t.title ?? '', Type: 'Audio', AlbumArtist: t.artist, Artists: t.artist ? [t.artist] : undefined,
+    Album: t.album, AlbumId: (t as QTrack).albumId, RunTimeTicks: t.duration ? t.duration * 10_000_000 : undefined,
+  };
+}
+
+/** Play Now: replaces the queue and starts at `index`. `name` is shown as "playing from". */
+export async function playNow(client: JellyfinClient, items: JfItem[], index = 0, name = '') {
   await TrackPlayer.reset();
   await TrackPlayer.add(items.map((i) => toTrack(client, i)));
   await TrackPlayer.skip(index);
+  originalOrder = [];
+  usePlayer.setState({ ctxName: name, shuffle: false });
   await TrackPlayer.play();
+  await syncQueue();
+}
+
+/** Where hand-queued songs go: right after the current track and any songs already queued by hand. */
+async function queueInsertIndex() {
+  const { tracks, index } = usePlayer.getState();
+  let at = index + 1;
+  while (at < tracks.length && tracks[at].queued) at++;
+  return at;
 }
 
 export async function playNext(client: JellyfinClient, items: JfItem[]) {
-  const current = await TrackPlayer.getActiveTrackIndex();
-  await TrackPlayer.add(items.map((i) => toTrack(client, i)), (current ?? -1) + 1);
+  const { index } = usePlayer.getState();
+  await TrackPlayer.add(items.map((i) => toTrack(client, i, true)), index + 1);
+  await syncQueue();
 }
 
+/** Returns how many songs are now queued by hand (for the "#n up next" toast). */
 export async function addToQueue(client: JellyfinClient, items: JfItem[]) {
-  await TrackPlayer.add(items.map((i) => toTrack(client, i)));
+  const wasEmpty = usePlayer.getState().tracks.length === 0;
+  const at = await queueInsertIndex();
+  await TrackPlayer.add(items.map((i) => toTrack(client, i, !wasEmpty)), wasEmpty ? undefined : at);
+  await syncQueue();
+  return usePlayer.getState().tracks.filter((t, i) => t.queued && i > usePlayer.getState().index).length;
 }
 
-export const removeFromQueue = (index: number) => TrackPlayer.remove(index);
-export const moveInQueue = (from: number, to: number) => TrackPlayer.move(from, to);
+export const removeFromQueue = async (index: number) => { await TrackPlayer.remove(index); await syncQueue(); };
+export const moveInQueue = async (from: number, to: number) => { await TrackPlayer.move(from, to); await syncQueue(); };
+export async function skipTo(index: number) { await TrackPlayer.skip(index); await TrackPlayer.play(); await syncQueue(); }
+
 export async function clearQueue() {
-  const current = await TrackPlayer.getActiveTrackIndex();
-  const queue = await TrackPlayer.getQueue();
-  const remove = queue.map((_, i) => i).filter((i) => i !== current);
+  const { tracks, index } = usePlayer.getState();
+  const remove = tracks.map((_, i) => i).filter((i) => i !== index);
   if (remove.length) await TrackPlayer.remove(remove);
+  originalOrder = [];
+  await syncQueue();
+}
+
+/** Shuffle only what is coming up from the playing list; hand-queued songs and the current track stay put. */
+export async function setShuffle(on: boolean) {
+  const { tracks, index } = usePlayer.getState();
+  const idx = tracks.map((t, i) => i).filter((i) => i > index && !tracks[i].queued);
+  if (!idx.length) { usePlayer.setState({ shuffle: on }); return; }
+  const upcoming = idx.map((i) => tracks[i]);
+  let next: QTrack[];
+  if (on) {
+    originalOrder = upcoming.map((t) => String(t.id));
+    next = [...upcoming].sort(() => Math.random() - 0.5);
+  } else {
+    const rank = new Map(originalOrder.map((id, i) => [id, i]));
+    next = [...upcoming].sort((a, b) => (rank.get(String(a.id)) ?? 1e9) - (rank.get(String(b.id)) ?? 1e9));
+  }
+  await TrackPlayer.remove(idx);
+  await TrackPlayer.add(next);
+  usePlayer.setState({ shuffle: on });
+  await syncQueue();
+}
+
+export async function cycleRepeat(): Promise<RepeatMode> {
+  const cur = await TrackPlayer.getRepeatMode();
+  const next = cur === RepeatMode.Off ? RepeatMode.Queue : cur === RepeatMode.Queue ? RepeatMode.Track : RepeatMode.Off;
+  await TrackPlayer.setRepeatMode(next);
+  return next;
 }

@@ -31,8 +31,14 @@ export function setPendingLikes(v: PendingLike[]) {
   Storage.setItemSync('pendingLikes', JSON.stringify(v));
 }
 
-export const getShowHome = (): boolean => Storage.getItemSync('showHome') !== '0';
-export const setShowHome = (v: boolean) => Storage.setItemSync('showHome', v ? '1' : '0');
+export const getShowDiscover = (): boolean => Storage.getItemSync('showDiscover') !== '0';
+export const setShowDiscover = (v: boolean) => Storage.setItemSync('showDiscover', v ? '1' : '0');
+
+/** In-app branding. The home-screen name/icon are baked in at build time; these only change what the app shows inside. */
+export const getAppName = (): string => Storage.getItemSync('appName') || 'Index of sound';
+export const setAppName = (v: string) => Storage.setItemSync('appName', v);
+export const getAppImage = (): string | null => Storage.getItemSync('appImage');
+export const setAppImage = (v: string | null) => (v ? Storage.setItemSync('appImage', v) : Storage.removeItemSync('appImage'));
 
 /** Recently played songs (local history, newest first). */
 export function getRecentTracks(): import('../api/types').JfItem[] {

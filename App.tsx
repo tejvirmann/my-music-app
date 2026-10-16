@@ -1,82 +1,89 @@
-import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
+import { DMMono_300Light, DMMono_400Regular, DMMono_500Medium } from '@expo-google-fonts/dm-mono';
+import { InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MiniPlayer } from './src/ui/MiniPlayer';
-import { Empty, colors } from './src/ui';
+import { navRef } from './src/navigation/ref';
+import { useQueueSync } from './src/player/queue';
 import { useRecordPlays } from './src/player/recents';
 import { setupPlayer } from './src/player/setup';
 import { AlbumScreen } from './src/screens/AlbumScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
-import { LidarrScreen } from './src/screens/LidarrScreen';
-import { MetadataScreen } from './src/screens/MetadataScreen';
-import { SongInfoScreen } from './src/screens/SongInfoScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { MetadataScreen } from './src/screens/MetadataScreen';
 import { NowPlayingScreen } from './src/screens/NowPlayingScreen';
 import { PlaylistScreen } from './src/screens/PlaylistScreen';
 import { QueueScreen } from './src/screens/QueueScreen';
+import { SearchScreen } from './src/screens/SearchScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { SongInfoScreen } from './src/screens/SongInfoScreen';
 import { useAuth } from './src/state/auth';
-import { useSettings } from './src/state/settings';
-import { SongMenuHost } from './src/ui/songMenu';
+import { SheetHost } from './src/ui/sheets';
+import { TabBar } from './src/ui/TabBar';
+import { ToastHost } from './src/ui/toast';
+import { useColors, useIsDark } from './src/ui/theme';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 60_000 } } });
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
-const nav = createNavigationContainerRef<any>();
-const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.bg, card: colors.bg } };
 
 function Tabs() {
-  const showHome = useSettings((x) => x.showHome);
   return (
-    <Tab.Navigator screenOptions={{
-      tabBarActiveTintColor: colors.accent,
-      headerRight: () => (
-        <Pressable hitSlop={12} onPress={() => nav.isReady() && nav.navigate('Settings')} style={{ paddingRight: 16 }} accessibilityLabel="Settings">
-          <Text style={{ color: colors.text, fontSize: 24 }}>⚙︎</Text>
-        </Pressable>
-      ),
-    }}>
-      {showHome && <Tab.Screen name="Home" component={HomeScreen} />}
+    <Tab.Navigator tabBar={(p) => <TabBar {...p} />} screenOptions={{ headerShown: false }}>
+      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Library" component={LibraryScreen} />
-      <Tab.Screen name="Queue" component={QueueScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
     </Tab.Navigator>
   );
 }
 
+function Shell() {
+  const c = useColors();
+  const dark = useIsDark();
+  const inset = useSafeAreaInsets();
+  const theme = { ...(dark ? DarkTheme : DefaultTheme), colors: { ...(dark ? DarkTheme : DefaultTheme).colors, background: c.bg, card: c.bg, text: c.fg, border: c.line, primary: c.accent } };
+  return (
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <NavigationContainer theme={theme} ref={navRef}>
+        <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
+          <Stack.Screen name="Tabs" component={Tabs} />
+          <Stack.Screen name="Album" component={AlbumScreen} />
+          <Stack.Screen name="Playlist" component={PlaylistScreen} />
+          <Stack.Screen name="SongInfo" component={SongInfoScreen} />
+          <Stack.Screen name="Queue" component={QueueScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Metadata" component={MetadataScreen} />
+          <Stack.Screen name="NowPlaying" component={NowPlayingScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <SheetHost />
+      <ToastHost bottom={inset.bottom + 96} />
+    </View>
+  );
+}
+
 export default function App() {
+  const c = useColors();
+  const dark = useIsDark();
   const { session, booting, boot } = useAuth();
+  const [fontsReady] = useFonts({ DMMono_300Light, DMMono_400Regular, DMMono_500Medium, InstrumentSerif_400Regular_Italic });
   useEffect(() => { boot(); setupPlayer(); }, [boot]);
   useRecordPlays();
+  useQueueSync();
 
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={qc}>
-        <StatusBar style="light" />
-        {booting ? <Empty loading /> : !session ? <LoginScreen /> : (
-          <View style={{ flex: 1, backgroundColor: colors.bg }}>
-            <NavigationContainer theme={theme} ref={nav}>
-              <Stack.Navigator>
-                <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
-                <Stack.Screen name="Album" component={AlbumScreen} options={({ route }: any) => ({ title: route.params.name })} />
-                <Stack.Screen name="Playlist" component={PlaylistScreen} options={({ route }: any) => ({ title: route.params.name })} />
-                <Stack.Screen name="Settings" component={SettingsScreen} />
-                <Stack.Screen name="FindMusic" component={LidarrScreen} options={{ title: 'Find new music' }} />
-                <Stack.Screen name="Metadata" component={MetadataScreen} options={{ title: 'Metadata health' }} />
-                <Stack.Screen name="SongInfo" component={SongInfoScreen} options={{ title: 'Song info' }} />
-                <Stack.Screen name="NowPlaying" component={NowPlayingScreen} options={{ title: 'Now Playing', presentation: 'modal' }} />
-              </Stack.Navigator>
-            </NavigationContainer>
-            <SongMenuHost onInfo={(id) => nav.isReady() && nav.navigate('SongInfo', { id })} />
-            <MiniPlayer onOpen={() => nav.isReady() && nav.navigate('NowPlaying')} />
-          </View>
-        )}
+        <StatusBar style={dark ? 'light' : 'dark'} />
+        {booting || !fontsReady ? <View style={{ flex: 1, backgroundColor: c.bg }} /> : !session ? <LoginScreen /> : <Shell />}
       </QueryClientProvider>
     </SafeAreaProvider>
   );

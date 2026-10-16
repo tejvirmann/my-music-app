@@ -1,29 +1,37 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { Alert, Pressable, Text } from 'react-native';
+import { View } from 'react-native';
 
 import type { JfItem } from '../api/types';
 import { useDownloadedTracks } from '../downloads';
-import { setLiked, useLiked } from '../likes';
-import { addToQueue } from '../player/queue';
+import { addToQueue, usePlayer } from '../player/queue';
 import { useAuth } from '../state/auth';
-import { Row, colors } from '.';
-import { openSongMenu } from './songMenu';
+import { IconBtn } from './IconBtn';
+import { ListRow } from './rows';
+import { openSongMenu, type SongCtx } from './sheets';
+import { Txt } from './text';
+import { toast } from './toast';
+import { useColors } from './theme';
 
-/** A song: swipe right = queue, heart = Liked, long-press = menu, green badge = downloaded. */
-export function SongRow({ track, title, subtitle, art, onPress }: {
-  track: JfItem; title?: string; subtitle?: string; art?: string; onPress: () => void;
+/** A song: tap = play, swipe right = queue, dots / long-press = menu. Green dot = on this phone, accent title = playing. */
+export function SongRow({ track, onPress, sub, hideArt, lead, ctx, chips }: {
+  track: JfItem; onPress: () => void; sub?: string; hideArt?: boolean; lead?: React.ReactNode; ctx?: SongCtx; chips?: string[];
 }) {
+  const c = useColors();
   const client = useAuth((a) => a.client)!;
-  const qc = useQueryClient();
-  const dl = useDownloadedTracks();
-  const liked = !!useLiked().data?.entries[track.Id];
+  const dl = useDownloadedTracks().has(track.Id);
+  const active = usePlayer((s) => s.tracks[s.index]?.id === track.Id);
   return (
-    <Row title={title ?? track.Name} subtitle={subtitle} art={art} downloaded={dl.has(track.Id)}
-      onPress={onPress} onLongPress={() => openSongMenu(track)} onSwipeRight={() => addToQueue(client, [track])}
-      right={
-        <Pressable hitSlop={10} onPress={() => setLiked(client, qc, [track.Id], !liked).catch((e) => Alert.alert('Failed', e.message))}>
-          <Text style={{ color: liked ? colors.accent : colors.dim, fontSize: 22 }}>{liked ? '♥' : '♡'}</Text>
-        </Pressable>
-      } />
+    <ListRow
+      noArt={hideArt} lead={lead}
+      art={client.imageUrl(track.AlbumId ?? track.Id, 160)}
+      title={track.Name} sub={sub ?? track.Artists?.[0] ?? track.AlbumArtist} dl={dl} active={active}
+      subExtra={chips?.length ? (
+        <View style={{ flexDirection: 'row', gap: 4, marginLeft: 8 }}>
+          {chips.map((x) => <View key={x} style={{ borderWidth: 1, borderColor: c.accent, paddingHorizontal: 5 }}><Txt v="small" color={c.accent}>{x}</Txt></View>)}
+        </View>
+      ) : undefined}
+      onPress={onPress} onLongPress={() => openSongMenu(track, ctx)}
+      swipe={() => addToQueue(client, [track]).then((n) => toast('Added to queue', `#${n} up next`))}
+      right={<IconBtn name="dots" label="More" color={c.mute} onPress={() => openSongMenu(track, ctx)} />}
+    />
   );
 }

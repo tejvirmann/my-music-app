@@ -1,27 +1,27 @@
-# src/ui — visual layer (owned by the UI session)
+# UI layer — "Index of sound"
 
-Everything visual should live here so it can be restyled without touching app logic.
+Design source: `mockups/app.html` (clickable) and `mockups/all.html` (every screen).
 
-- `index.tsx` — theme `colors`, shared `s` styles, and primitives: `Btn`, `Row` (with swipe-right + download badge), `DownloadBadge`, `Empty`, `fmt`.
-- `MiniPlayer.tsx`, `PlaylistPicker.tsx` — composite components.
-- Screens live in `src/screens/*` and currently mix layout with behavior. The UI session may restyle/restructure
-  them freely, but keep the behavior wired as-is.
+**Language:** warm paper (light) / near-black (dark), one vermillion accent, hairline borders, square art, DM Mono for text, Instrument Serif italic for headings. Lowercase tab labels. No shadows except on a dragged row.
 
-## Don't change (logic)
-`src/api/*`, `src/player/*`, `src/downloads.ts`, `src/downloadActions.ts`, `src/state/*`, `src/storage/*`.
+## Where things live
+- `theme.ts` — palette, `useColors()`, `useThemeMode()` (light/dark/system, persisted), font names (`F`).
+- `text.tsx` — `Txt` with variants `body | med | mute | small | label | h1 | h2 | h3`. Use it for all text.
+- `Icon.tsx` — SVG glyph set. `IconBtn.tsx` — tappable icon.
+- `layout.tsx` — `Screen` (safe area, optional `mini` docked player), `Body`, `TopBar`, `Heading`, `Section`, `Pill`, `Button`, `Empty`.
+- `rows.tsx` — `ListRow` (60px row), `SwipeRow` (swipe right → queue), `DlDot`, `Eq`.
+- `SongRow.tsx` — song row with menu, queue swipe, playing state, offline dot.
+- `Sheet.tsx` / `sheets.tsx` — bottom sheet + every action sheet (song, playlist, album, add-to-playlist). Open with `openSongMenu`, `openPlaylistMenu`, `openAlbumMenu`, `openAddToPlaylist`.
+- `toast.tsx` — `toast('Added to queue', '#2 up next')`.
+- `TabBar.tsx`, `MiniPlayer.tsx`, `Brand.tsx` (in-app logo), `Art.tsx` (cached cover).
 
-## Behavior the UI must keep
-- Swipe a track row right → add to queue (`Row.onSwipeRight`).
-- Download state: green ↓ badge on downloaded tracks/playlists (`useDownloadedTracks`, `useDownloadedPlaylists`, `useDownloadProgress`).
-- Library tab = Playlists | Albums. Playlists: pinned first (local), long-press menu: Pin / Download or Remove download / Hide.
-- No "delete playlist from Jellyfin" button (deliberately removed).
-- Playlist create/edit/reorder/remove-track go to Jellyfin; pin and hide are local to the phone.
+## Rules
+- No hard-coded colours; use `useColors()`.
+- Keep rows a fixed height (`ROW_H`) — queue drag-reorder depends on it.
+- Data/logic lives outside this folder (`src/api`, `player`, `downloads*`, `likes`, `state`, `storage`).
 
-## Placeholders to replace
-Plain text glyphs for icons (↓ ✓ ↑ ✕), basic colors, no app icon/logo yet (set in app.json), no animations/typography.
-
-## Added later
-- `SongRow.tsx` (swipe = queue, ♥ = Liked, long-press menu, download badge), `songMenu.tsx` (long-press menu host).
-- Library search (`screens/SearchResults.tsx`): sections Songs / Albums / Playlists, swipe-right queues each.
-- Home tab (`screens/HomeScreen.tsx`): Lidarr search + "Add" / "♥ Add". Hidable in Settings.
-- Song info (`screens/SongInfoScreen.tsx`): all Jellyfin metadata + "Refresh metadata".
+## Not built yet (in the mockup)
+- Custom playlist cover from photos.
+- Offline-first playlist edits that sync later ("↻ N changes waiting").
+- Search by label and BPM (Jellyfin doesn't expose them reliably).
+- Crossfade / normalize volume / streaming quality / cellular-download toggles (need player work).

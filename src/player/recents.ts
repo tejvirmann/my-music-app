@@ -3,6 +3,7 @@ import { useActiveTrack } from 'react-native-track-player';
 import { create } from 'zustand';
 
 import type { JfItem } from '../api/types';
+import { trackToItem } from './queue';
 import { getRecentTracks, setRecentTracks } from '../storage/prefs';
 
 const MAX = 30;
@@ -15,10 +16,7 @@ export function useRecordPlays() {
   const t = useActiveTrack();
   useEffect(() => {
     if (!t?.id) return;
-    const item = {
-      Id: String(t.id), Name: t.title ?? '', Type: 'Audio', AlbumArtist: t.artist, Artists: t.artist ? [t.artist] : undefined,
-      Album: t.album, AlbumId: (t as any).albumId, RunTimeTicks: t.duration ? t.duration * 10_000_000 : undefined,
-    } as JfItem;
+    const item = trackToItem(t);
     const next = [item, ...useRecents.getState().tracks.filter((x) => x.Id !== item.Id)].slice(0, MAX);
     setRecentTracks(next);
     useRecents.setState({ tracks: next });
