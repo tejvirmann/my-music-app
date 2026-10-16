@@ -8,6 +8,7 @@ import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { navRef } from './src/navigation/ref';
@@ -80,11 +81,13 @@ export default function App() {
   useQueueSync();
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <QueryClientProvider client={qc}>
         <StatusBar style={dark ? 'light' : 'dark'} />
         {booting || !fontsReady ? <View style={{ flex: 1, backgroundColor: c.bg }} /> : !session ? <LoginScreen /> : <Shell />}
       </QueryClientProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

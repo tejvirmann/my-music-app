@@ -5,6 +5,7 @@ import { playNow } from '../player/queue';
 import { useRecents } from '../player/recents';
 import { useAuth } from '../state/auth';
 import { useSettings } from '../state/settings';
+import { APP_NAME } from '../brand';
 import { Art } from '../ui/Art';
 import { Logo } from '../ui/Brand';
 import { Body, Empty, Heading, IconBtn, Screen, Section, TopBar } from '../ui/layout';
@@ -25,8 +26,8 @@ function Tile({ art, title, onPress }: { art: string; title: string; onPress: ()
 
 export function HomeScreen({ navigation }: any) {
   const c = useColors();
+  const { showGreeting, greetingText } = useSettings();
   const client = useAuth((a) => a.client)!;
-  const appName = useSettings((s) => s.appName);
   const recent = useRecents((r) => r.tracks).slice(0, 8);
   const pl = usePlaylists();
   const albums = useQuery({ queryKey: ['recentAlbums'], queryFn: () => client.recentAlbums(20) });
@@ -42,10 +43,10 @@ export function HomeScreen({ navigation }: any) {
   return (
     <Screen>
       <TopBar
-        left={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Logo size={26} /><Txt style={{ fontFamily: F.serif, fontSize: 18 }}>{appName}</Txt></View>}
+        left={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Logo size={26} /><Txt style={{ fontFamily: F.serif, fontSize: 18 }}>{APP_NAME}</Txt></View>}
         right={<IconBtn name="gear" label="Settings" onPress={() => navigation.navigate('Settings')} />} />
       <Body refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.mute} />}>
-        <Heading title={greeting()} sub="pick up where you left off" />
+        {showGreeting && <Heading title={greetingText.trim() || greeting()} />}
         {tiles.length > 0 && <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{tiles.map((t) => <Tile key={t.key} art={t.art} title={t.title} onPress={t.go} />)}</View>}
 
         {recent.length > 0 ? (

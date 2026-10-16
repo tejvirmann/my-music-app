@@ -1,48 +1,47 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, Pressable, View } from 'react-native';
+import { Animated, Pressable, View } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 
 import { Art } from './Art';
 import { Icon } from './Icon';
 import { Txt } from './text';
 import { F, useColors } from './theme';
 
-const ARM = 70; // drag distance (px) at which releasing triggers the action
+const ARM = 60; // drag distance (px) at which releasing triggers the action
 
-/** Swipe right to trigger `onSwipe` (add to queue). Row follows the finger, hint flips to "release to add", then confirms with a check. */
+/**
+ * Swipe right to trigger `onSwipe` (add to queue). Uses the native gesture recogniser, which only activates on a rightward
+ * drag and yields to vertical scrolling, so it behaves inside lists. The row follows the finger on the native thread.
+ */
 export function SwipeRow({ onSwipe, label = 'add to queue', done: doneLabel = 'added', children }: {
   onSwipe: () => void; label?: string; done?: string; children: React.ReactNode;
 }) {
   const c = useColors();
-  const x = useRef(new Animated.Value(0)).current;
+  const tx = useRef(new Animated.Value(0)).current;
   const cb = useRef(onSwipe);
   cb.current = onSwipe;
   const [armed, setArmed] = useState(false);
   const [done, setDone] = useState(false);
   const armedRef = useRef(false);
 
-  useEffect(() => {
-    const id = x.addListener(({ value }) => {
-      const a = value > ARM;
+  const x = tx.interpolate({ inputRange: [0, 120], outputRange: [0, 120], extrapolate: 'clamp' });
+  const bgOpacity = tx.interpolate({ inputRange: [0, ARM], outputRange: [0, 1], extrapolate: 'clamp' });
+  const onGesture = useRef(Animated.event([{ nativeEvent: { translationX: tx } }], {
+    useNativeDriver: true,
+    listener: (e: any) => {
+      const a = e.nativeEvent.translationX > ARM;
       if (a !== armedRef.current) { armedRef.current = a; setArmed(a); }
-    });
-    return () => x.removeListener(id);
-  }, [x]);
-
-  const back = () => Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0 }).start();
-  const pan = useRef(PanResponder.create({
-    // Claim a mostly-horizontal drag in the capture phase so child buttons and the list scroll don't steal it.
-    onMoveShouldSetPanResponderCapture: (_, g) => g.dx > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderMove: (_, g) => x.setValue(Math.max(0, Math.min(g.dx * 0.8, 120))),
-    onPanResponderRelease: () => {
-      const fire = armedRef.current;
-      back();
-      if (fire) { cb.current(); setDone(true); setTimeout(() => setDone(false), 900); }
     },
-    onPanResponderTerminate: back,
   })).current;
+  const onState = (e: any) => {
+    const { oldState, translationX, velocityX } = e.nativeEvent;
+    if (oldState !== State.ACTIVE) return;
+    const fire = translationX > ARM || (translationX > 30 && velocityX > 800);
+    Animated.spring(tx, { toValue: 0, useNativeDriver: true, bounciness: 0 }).start();
+    armedRef.current = false; setArmed(false);
+    if (fire) { cb.current(); setDone(true); setTimeout(() => setDone(false), 900); }
+  };
 
-  const bgOpacity = x.interpolate({ inputRange: [0, ARM], outputRange: [0, 1], extrapolate: 'clamp' });
   return (
     <View>
       <Animated.View pointerEvents="none" style={{
@@ -52,7 +51,9 @@ export function SwipeRow({ onSwipe, label = 'add to queue', done: doneLabel = 'a
         <Icon name={done ? 'check' : 'queue'} size={20} color={c.accent} />
         <Txt color={c.accent}>{done ? doneLabel : armed ? 'release to add' : label}</Txt>
       </Animated.View>
-      <Animated.View style={{ backgroundColor: c.bg, transform: [{ translateX: x }] }} {...pan.panHandlers}>{children}</Animated.View>
+      <PanGestureHandler activeOffsetX={10} failOffsetY={[-12, 12]} onGestureEvent={onGesture} onHandlerStateChange={onState}>
+        <Animated.View style={{ backgroundColor: c.bg, transform: [{ translateX: x }] }}>{children}</Animated.View>
+      </PanGestureHandler>
     </View>
   );
 }

@@ -1,11 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Directory, File, Paths } from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, TextInput, View } from 'react-native';
 import TrackPlayer from 'react-native-track-player';
 
 import { LidarrClient } from '../api/lidarr';
+import { APP_NAME } from '../brand';
 import { totalBytes } from '../downloads';
 import { clearQueue } from '../player/queue';
 import { useAuth } from '../state/auth';
@@ -17,6 +16,7 @@ import { Body, Button, Screen, TopBar } from '../ui/layout';
 import { Txt } from '../ui/text';
 import { F, useColors, useThemeMode, type Mode } from '../ui/theme';
 import { toast } from '../ui/toast';
+import { greeting } from './hooks';
 import { useLidarrConfig } from './lidarrConfig';
 
 function Group({ title }: { title: string }) {
@@ -70,34 +70,16 @@ export function SettingsScreen({ navigation }: any) {
   const { session, signOut } = useAuth();
   const qc = useQueryClient();
   const { mode, setMode } = useThemeMode();
-  const { showDiscover, setShowDiscover, appName, setAppName, appImage, setAppImage } = useSettings();
+  const { showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText } = useSettings();
   const hidden = useLibraryPrefs((s) => s.hidden);
   const unhideAll = useLibraryPrefs((s) => s.unhideAll);
   const saved = useLidarrConfig().data;
-  const [name, setName] = useState(appName);
   const [lUrl, setLUrl] = useState('');
   const [lKey, setLKey] = useState('');
   useEffect(() => { if (saved) { setLUrl(saved.url); setLKey(saved.apiKey); } }, [saved]);
 
   const out = async () => { await TrackPlayer.reset(); qc.clear(); await signOut(); };
   const host = session?.serverUrl.replace(/^https?:\/\//, '');
-
-  const pickImage = async () => {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
-    if (r.canceled || !r.assets[0]) return;
-    try {
-      const dest = new File(Paths.document, `brand-${Date.now()}.jpg`);
-      new File(r.assets[0].uri).copy(dest);
-      if (appImage) try { new File(appImage).delete(); } catch {}
-      setAppImage(dest.uri);
-      toast('App image updated');
-    } catch (e: any) { Alert.alert('Could not save image', e.message); }
-  };
-  const imageMenu = () => Alert.alert('App image', 'Shown inside the app.', [
-    { text: 'Choose from photos', onPress: pickImage },
-    ...(appImage ? [{ text: 'Use initial letter', onPress: () => { try { new File(appImage).delete(); } catch {} setAppImage(null); } }] : []),
-    { text: 'Cancel', style: 'cancel' as const },
-  ]);
 
   const saveL = async () => {
     if (!lUrl.trim() || !lKey.trim()) return Alert.alert('Enter both the Lidarr URL and API key');
@@ -120,12 +102,19 @@ export function SettingsScreen({ navigation }: any) {
         <Item label="Theme"><Seg value={mode} options={['light', 'dark', 'system']} onChange={(m: Mode) => setMode(m)} /></Item>
 
         <Group title="App" />
-        <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.line }}>
-          <Txt v="label">name</Txt>
-          <Input value={name} onChangeText={setName} maxLength={24} onEndEditing={() => { setAppName(name); setName(name.trim() || 'Index of sound'); }} style={{ marginTop: 2 }} />
-        </View>
-        <Item label="Image" sub="shown inside the app" onPress={imageMenu}><Logo size={34} /></Item>
-        <Txt v="small" style={{ marginTop: 8 }}>Changes the name and image inside the app. The home-screen name and icon are set when the app is built.</Txt>
+        <Item label={APP_NAME} sub="home-screen name and icon are set when the app is built" value="">
+          <Logo size={34} />
+        </Item>
+
+        <Group title="Home" />
+        <Item label="Show greeting"><Toggle on={showGreeting} onChange={setShowGreeting} /></Item>
+        {showGreeting && (
+          <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.line }}>
+            <Txt v="label">greeting text</Txt>
+            <Input value={greetingText} onChangeText={setGreetingText} maxLength={40} placeholder={`automatic: ${greeting()}`} style={{ marginTop: 2 }} />
+            <Txt v="small" style={{ marginTop: 4 }}>Leave empty to follow the time of day.</Txt>
+          </View>
+        )}
 
         <Group title="Library" />
         <Item label="Server" sub={host} value="change ›" onPress={out} />

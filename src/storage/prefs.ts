@@ -34,11 +34,11 @@ export function setPendingLikes(v: PendingLike[]) {
 export const getShowDiscover = (): boolean => Storage.getItemSync('showDiscover') !== '0';
 export const setShowDiscover = (v: boolean) => Storage.setItemSync('showDiscover', v ? '1' : '0');
 
-/** In-app branding. The home-screen name/icon are baked in at build time; these only change what the app shows inside. */
-export const getAppName = (): string => Storage.getItemSync('appName') || 'Index of sound';
-export const setAppName = (v: string) => Storage.setItemSync('appName', v);
-export const getAppImage = (): string | null => Storage.getItemSync('appImage');
-export const setAppImage = (v: string | null) => (v ? Storage.setItemSync('appImage', v) : Storage.removeItemSync('appImage'));
+/** Home greeting: hidden, automatic (by time of day, when text is empty) or custom text. */
+export const getShowGreeting = (): boolean => Storage.getItemSync('showGreeting') !== '0';
+export const setShowGreeting = (v: boolean) => Storage.setItemSync('showGreeting', v ? '1' : '0');
+export const getGreetingText = (): string => Storage.getItemSync('greetingText') ?? '';
+export const setGreetingText = (v: string) => Storage.setItemSync('greetingText', v);
 
 /** Recently played songs (local history, newest first). */
 export function getRecentTracks(): import('../api/types').JfItem[] {
