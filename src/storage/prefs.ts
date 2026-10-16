@@ -8,3 +8,6 @@ export function getHiddenPlaylists(): string[] {
 export function setHiddenPlaylists(ids: string[]) {
   Storage.setItemSync('hiddenPlaylistIds', JSON.stringify(ids));
 }
+
+export const getLastServerUrl = (): string => Storage.getItemSync('lastServerUrl') ?? '';
+export const setLastServerUrl = (u: string) => Storage.setItemSync('lastServerUrl', u);

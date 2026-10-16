@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { JellyfinClient, login } from '../api/jellyfin';
 import type { Session } from '../api/types';
+import { setLastServerUrl } from '../storage/prefs';
 import { clearSession, loadSession, saveSession } from '../storage/session';
 
 interface AuthState {
@@ -27,6 +28,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     const deviceId = get().session?.deviceId ?? newDeviceId();
     const s = await login(url, user, pass, deviceId);
     await saveSession(s);
+    setLastServerUrl(url.trim());
     set({ session: s, client: new JellyfinClient(s) });
   },
   signOut: async () => {

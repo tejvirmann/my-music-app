@@ -16,6 +16,7 @@ export function SettingsScreen() {
       <Text style={s.text}>Offline downloads: {(totalBytes() / 1e6).toFixed(1)} MB</Text>
       <View style={[s.buttons, { paddingHorizontal: 0 }]}>
         <Btn title="Sync now (clear cache)" onPress={() => qc.invalidateQueries()} />
+        <Btn title="Change server / sign in again" onPress={async () => { await TrackPlayer.reset(); qc.clear(); await signOut(); }} />
         <Btn title="Sign out" kind="danger" onPress={async () => { await TrackPlayer.reset(); qc.clear(); await signOut(); }} />
       </View>
     </View>
