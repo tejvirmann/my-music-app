@@ -20,7 +20,7 @@ export async function login(serverUrl: string, username: string, password: strin
   try {
     res = await fetch(`${base}/Users/AuthenticateByName`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Emby-Authorization': authHeader(deviceId) },
+      headers: { 'Content-Type': 'application/json', 'Authorization': authHeader(deviceId) },
       body: JSON.stringify({ Username: username, Pw: password }),
     });
   } catch {
@@ -40,7 +40,7 @@ export class JellyfinClient {
       ...init,
       headers: {
         'Content-Type': 'application/json',
-        'X-Emby-Authorization': authHeader(this.s.deviceId, this.s.token),
+        'Authorization': authHeader(this.s.deviceId, this.s.token),
         ...(init.headers ?? {}),
       },
     });
@@ -58,7 +58,7 @@ export class JellyfinClient {
 
   /** Direct (static) stream: no transcoding, so the server does almost no work. */
   streamUrl(id: string) {
-    return `${this.s.serverUrl}/Audio/${id}/stream?static=true&api_key=${this.s.token}`;
+    return `${this.s.serverUrl}/Audio/${id}/stream?static=true&ApiKey=${this.s.token}`;
   }
 
   albums(startIndex = 0, limit = 100, search?: string) {
