@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TrackPlayer, { RepeatMode, useActiveTrack, useProgress } from 'react-native-track-player';
 
 import { setLiked, useLiked } from '../likes';
-import { navigate } from '../navigation/ref';
+import { openAfterDismiss } from '../navigation/ref';
 import { skipNext, skipPrev, useIsPlaying } from '../player/controls';
 import { cycleRepeat, setShuffle, trackToItem, usePlayer } from '../player/queue';
 import { useAuth } from '../state/auth';
@@ -140,7 +140,8 @@ export function NowPlayingScreen({ navigation }: any) {
   const albumId = (track as any).albumId as string | undefined;
   const dest = ctx ? { screen: ctx.kind === 'playlist' ? 'Playlist' : 'Album', params: { id: ctx.id, name: ctx.name } }
     : albumId ? { screen: 'Album', params: { id: albumId, name: track.album ?? '' } } : null;
-  const goTo = (screen: string, params: object) => { navigation.goBack(); setTimeout(() => navigate(screen, params), 50); };
+  const goTo = (screen: string, params: object) => { navigation.goBack(); openAfterDismiss(screen, params); };
+  const artists = info.data?.Artists?.length ? info.data.Artists : track.artist ? String(track.artist).split(', ') : [];
   const like = () => setLiked(client, qc, [id], !isLiked).then(() => toast(isLiked ? 'Removed from Liked' : 'Added to Liked')).catch((e) => Alert.alert('Failed', e.message));
 
   return (
@@ -149,7 +150,7 @@ export function NowPlayingScreen({ navigation }: any) {
         <IconBtn name="down" size={28} label="Close" onPress={() => navigation.goBack()} />
         <Pressable disabled={!dest} onPress={() => dest && goTo(dest.screen, dest.params)} style={{ alignItems: 'center', flex: 1 }} accessibilityLabel={dest ? `Open ${dest.params.name}` : undefined}>
           <Txt v="label">playing from</Txt>
-          <Txt numberOfLines={1}>{ctxName || 'Queue'}</Txt>
+          <Txt numberOfLines={1} style={dest ? { textDecorationLine: 'underline' } : undefined}>{ctxName || 'Queue'}</Txt>
         </Pressable>
         <IconBtn name="dots" label="More" onPress={() => openSongMenu(trackToItem(track))} />
       </View>
@@ -160,7 +161,11 @@ export function NowPlayingScreen({ navigation }: any) {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16 }}>
         <View style={{ flex: 1, paddingRight: 12 }}>
           <Txt v="h2" numberOfLines={2} style={{ fontSize: 30, lineHeight: 32 }}>{track.title}</Txt>
-          <Txt v="mute" numberOfLines={1} onPress={track.artist ? () => goTo('Artist', { name: String(track.artist).split(', ')[0] }) : undefined}>{track.artist}</Txt>
+          <Txt v="mute" numberOfLines={1}>
+            {artists.map((a, i) => (
+              <Txt key={a} v="mute" suppressHighlighting onPress={() => goTo('Artist', { name: a })} style={{ textDecorationLine: 'underline' }}>{a}{i < artists.length - 1 ? ', ' : ''}</Txt>
+            ))}
+          </Txt>
         </View>
         <IconBtn name={isLiked ? 'heart' : 'heartO'} size={28} color={isLiked ? c.accent : c.mute} label={isLiked ? 'Unlike' : 'Like'} onPress={like} />
       </View>

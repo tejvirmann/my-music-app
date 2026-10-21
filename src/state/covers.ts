@@ -7,6 +7,9 @@ const KEY = 'playlistCovers';
 const read = (): Record<string, string> => { try { return JSON.parse(Storage.getItemSync(KEY) ?? '{}'); } catch { return {}; } };
 const dir = new Directory(Paths.document, 'covers');
 
+/** Keys for the default images chosen in Settings, stored in the same map as per-playlist covers. */
+export const DEFAULT_COVER = { clips: 'default:clips', unknown: 'default:unknown', art: 'default:art' } as const;
+
 /** Custom playlist covers, stored on the phone (playlist id -> local file). Playlists without one get an auto collage. */
 export const useCovers = create<{ map: Record<string, string> }>(() => ({ map: read() }));
 

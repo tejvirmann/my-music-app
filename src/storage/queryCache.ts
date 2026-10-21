@@ -4,7 +4,7 @@ import Storage from 'expo-sqlite/kv-store';
 const KEY = 'queryCache';
 
 /** Library queries worth showing instantly on the next launch. The big search indexes are rebuilt instead. */
-const PERSISTED = new Set(['playlists', 'playlist', 'albums', 'album', 'recentAlbums', 'recentSongs', 'liked', 'sameArt', 'playlistCover']);
+const PERSISTED = new Set(['playlists', 'playlist', 'albums', 'album', 'recentAlbums', 'recentSongs', 'liked', 'sameArt', 'playlistCover', 'playlistIds']);
 export const shouldPersist = (key: readonly unknown[]) => PERSISTED.has(String(key[0]));
 
 let latest: PersistedClient | undefined;

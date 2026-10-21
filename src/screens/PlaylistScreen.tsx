@@ -1,9 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pressable, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, TextInput, View } from 'react-native';
 
 import { toggleDownload } from '../downloadActions';
 import { useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
 import { playNow } from '../player/queue';
+import { norm, prep, searchItems } from '../search';
 import { useAuth } from '../state/auth';
 import { PlaylistCover } from '../ui/PlaylistCover';
 import { Icon } from '../ui/Icon';
@@ -11,7 +13,7 @@ import { Body, Empty, IconBtn, Screen, TopBar } from '../ui/layout';
 import { SongRow } from '../ui/SongRow';
 import { openPlaylistMenu } from '../ui/sheets';
 import { Txt } from '../ui/text';
-import { useColors } from '../ui/theme';
+import { F, useColors } from '../ui/theme';
 
 export function PlaylistScreen({ route, navigation }: any) {
   const c = useColors();
@@ -27,6 +29,10 @@ export function PlaylistScreen({ route, navigation }: any) {
   const stale = isDl && tracks.some((t) => !dlTracks.has(t.Id));
   const mins = Math.round(tracks.reduce((n, t) => n + (t.RunTimeTicks ?? 0) / 6e8, 0));
   const refresh = () => { qc.invalidateQueries({ queryKey: key }); qc.invalidateQueries({ queryKey: ['playlists'] }); qc.invalidateQueries({ queryKey: ['playlistCover'] }); };
+  const [text, setText] = useState('');
+  const rows = useMemo(() => tracks.map((t, i) => ({ item: { t, i }, p: prep({ title: t.Name, artist: (t.Artists ?? [t.AlbumArtist ?? '']).join(' '), album: t.Album }) })), [tracks]);
+  const searching = norm(text).length > 0;
+  const shown = useMemo(() => (searching ? searchItems(rows, text, { title: 2, artist: 1.5, album: 1 }).map((x) => x.item) : tracks.map((t, i) => ({ t, i }))), [rows, text, searching, tracks]);
   const shuffled = () => [...tracks].sort(() => Math.random() - 0.5);
 
   return (
@@ -53,12 +59,21 @@ export function PlaylistScreen({ route, navigation }: any) {
           </Pressable>
         </View>
         {stale && !progress && <Txt color={c.accent} style={{ marginBottom: 4 }} onPress={() => toggleDownload(client, 'playlist', id, name, false)}>↻ new songs not downloaded · update</Txt>}
+        {tracks.length > 6 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.fg, paddingVertical: 6, marginVertical: 8 }}>
+            <Icon name="srch" size={18} color={c.mute} />
+            <TextInput value={text} onChangeText={setText} autoCapitalize="none" autoCorrect={false} returnKeyType="search" clearButtonMode="while-editing"
+              placeholder="search this playlist…" placeholderTextColor={c.mute} selectionColor={c.accent}
+              style={{ flex: 1, fontFamily: F.mono, fontSize: 14, color: c.fg, paddingVertical: 4 }} />
+          </View>
+        )}
         {isLoading ? <Empty loading /> : error ? <Empty text={(error as Error).message} /> : !tracks.length ? <Empty text="Empty playlist. Use ⋯ on any song → Add to playlist." /> : (
           <View style={{ marginHorizontal: -16 }}>
-            {tracks.map((t, i) => (
+            {searching && !shown.length && <View style={{ paddingHorizontal: 16 }}><Empty text={`Nothing in this playlist for "${text.trim()}".`} /></View>}
+            {shown.map(({ t, i }, n) => (
               <SongRow key={t.PlaylistItemId ?? `${t.Id}-${i}`} track={t} sub={[t.Artists?.[0] ?? t.AlbumArtist, t.Album].filter(Boolean).join(' · ')}
                 ctx={{ playlistId: id, entryId: t.PlaylistItemId, index: i, count: tracks.length, onChange: refresh }}
-                onPress={() => playNow(client, tracks, i, name, { kind: 'playlist', id, name })} />
+                onPress={() => playNow(client, shown.map((x) => x.t), n, name, { kind: 'playlist', id, name })} />
             ))}
           </View>
         )}

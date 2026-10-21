@@ -10,6 +10,7 @@ import { useAppIcon } from '../state/icon';
 import { totalBytes } from '../downloads';
 import { clearQueue } from '../player/queue';
 import { useAuth } from '../state/auth';
+import { DEFAULT_COVER, clearCover, pickCover, useCovers } from '../state/covers';
 import { useLibraryPrefs } from '../state/library';
 import { useSettings } from '../state/settings';
 import { clearLidarr, saveLidarr } from '../storage/lidarr';
@@ -48,6 +49,20 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   );
 }
 
+/** One default-image slot: shows the chosen image (or what applies instead), tap to pick, "reset" to clear. */
+function CoverSlot({ slot, label, sub }: { slot: string; label: string; sub: string }) {
+  const c = useColors();
+  const uri = useCovers((s) => s.map[slot]);
+  return (
+    <Item label={label} sub={sub} onPress={() => pickCover(slot).then((ok) => ok && toast('Default updated')).catch((e) => Alert.alert('Could not set image', e.message))}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {uri ? <Image source={{ uri }} style={{ width: 40, height: 40, borderWidth: 1, borderColor: c.line }} contentFit="cover" /> : <Txt v="mute">choose ›</Txt>}
+        {!!uri && <Txt color={c.accent} onPress={() => clearCover(slot)}>reset</Txt>}
+      </View>
+    </Item>
+  );
+}
+
 function Seg({ value, options, onChange }: { value: string; options: string[]; onChange: (v: any) => void }) {
   const c = useColors();
   return (
@@ -73,7 +88,7 @@ export function SettingsScreen({ navigation }: any) {
   const qc = useQueryClient();
   const { id: icon, supported: iconSupported, choose: chooseIcon } = useAppIcon();
   const { mode, setMode } = useThemeMode();
-  const { showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
+  const { unownCovers, setUnownCovers, showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
   const hidden = useLibraryPrefs((s) => s.hidden);
   const unhideAll = useLibraryPrefs((s) => s.unhideAll);
   const saved = useLidarrConfig().data;
@@ -132,6 +147,13 @@ export function SettingsScreen({ navigation }: any) {
             <Txt v="small" style={{ marginTop: 4 }}>Leave empty to follow the time of day.</Txt>
           </View>
         )}
+
+        <Group title="Default covers" />
+        <CoverSlot slot={DEFAULT_COVER.art} label="Songs & albums with no art" sub="used everywhere a cover is missing" />
+        <CoverSlot slot={DEFAULT_COVER.clips} label="Clips playlist" sub="when the Clips playlist has no art" />
+        <Item label="Unown for unknown playlists" sub="the Unown matching the playlist's first letter"><Toggle on={unownCovers} onChange={setUnownCovers} /></Item>
+        <CoverSlot slot={DEFAULT_COVER.unknown} label="Unknown playlists" sub="one image for every playlist with no art (wins over Unown)" />
+        <Txt v="small" style={{ marginTop: 4 }}>A cover you set on a playlist itself (⋯ → Set cover image) always wins.</Txt>
 
         <Group title="Library" />
         <Item label="Server" sub={host} value="change ›" onPress={out} />

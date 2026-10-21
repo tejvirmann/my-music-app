@@ -33,6 +33,8 @@ export function setPendingLikes(v: PendingLike[]) {
 
 export const getShowDiscover = (): boolean => Storage.getItemSync('showDiscover') !== '0';
 export const setShowDiscover = (v: boolean) => Storage.setItemSync('showDiscover', v ? '1' : '0');
+export const getUnownCovers = (): boolean => Storage.getItemSync('unownCovers') !== '0';
+export const setUnownCovers = (v: boolean) => Storage.setItemSync('unownCovers', v ? '1' : '0');
 
 /** In-app title (home header, login). Empty = the app's configured name. */
 export const getAppTitle = (): string => Storage.getItemSync('appTitle') ?? '';

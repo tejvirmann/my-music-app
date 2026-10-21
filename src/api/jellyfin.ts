@@ -210,6 +210,12 @@ export class JellyfinClient {
     return this.req<ItemsResponse>(`/Playlists/${playlistId}/Items?${q}`);
   }
 
+  /** Track ids in a playlist (small payload to keep): lets search say which playlists contain a song. */
+  async playlistIds(playlistId: string) {
+    const q = new URLSearchParams({ userId: this.s.userId, enableImages: 'false', enableUserData: 'false' });
+    return (await this.req<ItemsResponse>(`/Playlists/${playlistId}/Items?${q}`)).Items.map((i) => i.Id);
+  }
+
   createPlaylist(name: string, trackIds: string[] = []) {
     return this.req<{ Id: string }>('/Playlists', {
       method: 'POST',

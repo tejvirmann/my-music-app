@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import { View } from 'react-native';
 
 import { LIKED_NAME } from '../likes';
 import { useAuth } from '../state/auth';
-import { useCovers } from '../state/covers';
+import { DEFAULT_COVER, useCovers } from '../state/covers';
+import { useSettings } from '../state/settings';
+import { unownFor } from '../unown';
 import { Art } from './Art';
 import { Icon } from './Icon';
 import { Txt } from './text';
@@ -17,12 +20,30 @@ function fingerprint(buf: ArrayBuffer) {
   return `${b.length}:${h >>> 0}`;
 }
 
-/** Playlist cover: your own image if set, a fixed heart tile for Liked Songs, otherwise a 2×2 collage of the first songs' art. */
+/** An Unown for the playlist's first letter on a steady per-playlist colour. */
+function UnownTile({ name, size, box }: { name: string; size?: number; box: object }) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return (
+    <View style={[box, { backgroundColor: `hsl(${h}, 32%, 38%)`, alignItems: 'center', justifyContent: 'center' }]}>
+      <Image source={unownFor(name)} tintColor="rgba(255,255,255,0.9)" contentFit="contain" style={{ width: size ? size * 0.7 : '70%', height: size ? size * 0.7 : '70%' }} />
+    </View>
+  );
+}
+
+/**
+ * Playlist cover. Order: your own image for it, a heart tile for Liked Songs, a collage of the first songs' art, then (when no song has art)
+ * the default image from Settings (Clips has its own), an Unown, or a plain initial.
+ */
 export function PlaylistCover({ id, name, size }: { id: string; name: string; size?: number }) {
   const c = useColors();
   const client = useAuth((a) => a.client)!;
   const custom = useCovers((s) => s.map[id]);
   const liked = name === LIKED_NAME;
+  const unownOn = useSettings((x) => x.unownCovers);
+  const clipsImg = useCovers((x) => x.map[DEFAULT_COVER.clips]);
+  const unknownImg = useCovers((x) => x.map[DEFAULT_COVER.unknown]);
+  const isClips = name.trim().toLowerCase() === 'clips';
   const { data } = useQuery({ queryKey: ['playlistCover', id, 2], queryFn: () => client.playlistCover(id), enabled: !custom && !liked, staleTime: 30 * 60_000 });
   // Only tracks that really have a picture: voice clips etc. would otherwise leave blank squares in the collage.
   const artIds = (data?.Items ?? []).flatMap((t) => (t.AlbumPrimaryImageTag ? [t.AlbumId ?? t.Id] : t.ImageTags?.Primary ? [t.Id] : []));
@@ -49,7 +70,10 @@ export function PlaylistCover({ id, name, size }: { id: string; name: string; si
   }
   const albums = [...new Set(artIds)];
   if (data && !albums.length) {
-    // No track has art: a steady colour per playlist with its initial, instead of an empty grey square.
+    // No track has art, so no collage: Settings default, then an Unown, then a coloured initial.
+    const img = (isClips && clipsImg) || unknownImg;
+    if (img) return <Art uri={img} size={size} />;
+    if (unownOn) return <UnownTile name={name} size={size} box={box} />;
     let h = 0;
     for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
     return (
