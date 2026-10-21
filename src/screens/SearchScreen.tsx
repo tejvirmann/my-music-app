@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
 import type { JfItem } from '../api/types';
+import { useDownloadedTracks, useLocalAlbums } from '../downloads';
 import { addToQueue, playNow } from '../player/queue';
+import { useOffline } from '../state/offline';
 import { norm, prep, searchItems } from '../search';
 import { useAuth } from '../state/auth';
 import { isFresh, loadIndex, saveIndex } from '../storage/searchIndex';
@@ -63,6 +65,12 @@ export function SearchScreen({ navigation }: any) {
   const [more, setMore] = useState(false);
   const [kind, setKind] = useState<'all' | 'songs' | 'artists' | 'albums' | 'playlists'>('all');
   const idx = useIndex();
+  // Offline, only what is on the phone can be played, so only that is searched.
+  const offline = useOffline((s) => s.offline);
+  const downloaded = useDownloadedTracks();
+  const localAlbums = useLocalAlbums();
+  const rows = useMemo(() => (offline ? idx.rows.filter((r) => downloaded.has(r.item.Id)) : idx.rows), [offline, idx.rows, downloaded]);
+  const albumRows = useMemo(() => (offline ? idx.albumRows.filter((r) => localAlbums.some((a) => a.Id === r.item.Id)) : idx.albumRows), [offline, idx.albumRows, localAlbums]);
   const pls = usePlaylists();
   useEffect(() => { const t = setTimeout(() => setQ(text.trim()), mode === 'disc' ? 600 : 120); return () => clearTimeout(t); }, [text, mode]);
   useEffect(() => { if (!showDiscover) setMode('lib'); }, [showDiscover]);
@@ -70,13 +78,13 @@ export function SearchScreen({ navigation }: any) {
   useEffect(() => setKind('all'), [q === '']); // eslint-disable-line react-hooks/exhaustive-deps
 
   const has = norm(q).length > 0;
-  const songs = useMemo(() => searchItems(idx.rows, q, W), [idx.rows, q]);
-  const albums = useMemo(() => searchItems(idx.albumRows, q, W).map((x) => x.item), [idx.albumRows, q]);
+  const songs = useMemo(() => searchItems(rows, q, W), [rows, q]);
+  const albums = useMemo(() => searchItems(albumRows, q, W).map((x) => x.item), [albumRows, q]);
   const artistRows = useMemo(() => {
     const n = new Map<string, number>();
-    idx.rows.forEach(({ item: s }) => new Set([...(s.Artists ?? []), ...(s.AlbumArtist ? [s.AlbumArtist] : [])]).forEach((a) => n.set(a, (n.get(a) ?? 0) + 1)));
+    rows.forEach(({ item: s }) => new Set([...(s.Artists ?? []), ...(s.AlbumArtist ? [s.AlbumArtist] : [])]).forEach((a) => n.set(a, (n.get(a) ?? 0) + 1)));
     return [...n.entries()].map(([name, count]) => ({ item: { name, count }, p: prep({ name }) }));
-  }, [idx.rows]);
+  }, [rows]);
   const artists = useMemo(() => searchItems(artistRows, q, W).map((x) => x.item), [artistRows, q]);
   const plRows = useMemo(() => pls.items.map((p) => ({ item: p, p: prep({ name: p.Name }) })), [pls.items]);
   const plByName = useMemo(() => searchItems(plRows, q, W).map((x) => x.item), [plRows, q]);
@@ -84,7 +92,7 @@ export function SearchScreen({ navigation }: any) {
   // Which playlists hold which songs: fetched once per playlist the first time you search, then saved (refetched if its song count changes).
   const members = useQueries({
     queries: pls.items.map((p) => ({
-      queryKey: ['playlistIds', p.Id, p.ChildCount ?? 0], queryFn: () => client.playlistIds(p.Id), enabled: has, staleTime: 60 * 60_000, gcTime: Infinity,
+      queryKey: ['playlistIds', p.Id, p.ChildCount ?? 0], queryFn: () => client.playlistIds(p.Id), enabled: has && !offline, staleTime: 60 * 60_000, gcTime: Infinity,
     })),
   });
   const memberKey = members.map((m) => m.dataUpdatedAt).join(',');
@@ -103,11 +111,11 @@ export function SearchScreen({ navigation }: any) {
   // Suggestions come from the user's own library: most common genres, then newest years.
   const suggestions = useMemo(() => {
     const g = new Map<string, number>();
-    idx.rows.forEach(({ item: s }) => s.Genres?.forEach((x) => g.set(x, (g.get(x) ?? 0) + 1)));
+    rows.forEach(({ item: s }) => s.Genres?.forEach((x) => g.set(x, (g.get(x) ?? 0) + 1)));
     const genres = [...g.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([x]) => x.toLowerCase());
-    const years = [...new Set(idx.rows.map(({ item: s }) => s.ProductionYear).filter(Boolean))].sort().reverse().slice(0, 2).map(String);
+    const years = [...new Set(rows.map(({ item: s }) => s.ProductionYear).filter(Boolean))].sort().reverse().slice(0, 2).map(String);
     return [...genres, ...years];
-  }, [idx.rows]);
+  }, [rows]);
 
   const showSongs = kind === 'all' || kind === 'songs', showArtists = kind === 'all' || kind === 'artists', showAlbums = kind === 'all' || kind === 'albums', showPlaylists = kind === 'all' || kind === 'playlists';
   const shown = (more || kind === 'songs' ? songs.slice(0, 50) : songs.slice(0, 6)).map((x) => ({ s: x.item, hits: x.hits }));

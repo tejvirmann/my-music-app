@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
 import { toggleDownload } from '../downloadActions';
-import { useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
+import { orLocal, useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
 import { playNow } from '../player/queue';
 import { norm, prep, searchItems } from '../search';
 import { useAuth } from '../state/auth';
@@ -21,7 +21,7 @@ export function PlaylistScreen({ route, navigation }: any) {
   const qc = useQueryClient();
   const { id, name } = route.params;
   const key = ['playlist', id];
-  const { data, isLoading, error } = useQuery({ queryKey: key, queryFn: () => client.playlistTracks(id) });
+  const { data, isLoading, error } = useQuery({ queryKey: key, queryFn: () => orLocal(id, () => client.playlistTracks(id)) });
   const tracks = data?.Items ?? [];
   const progress = useDownloadProgress(id);
   const isDl = useDownloadedPlaylists().has(id);

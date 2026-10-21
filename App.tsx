@@ -18,6 +18,8 @@ import { useQueueSync } from './src/player/queue';
 import { useRecordPlays } from './src/player/recents';
 import { setupPlayer } from './src/player/setup';
 import { AlbumScreen } from './src/screens/AlbumScreen';
+import { backfillOfflineMeta } from './src/downloads';
+import { useConnectionWatch, useOffline } from './src/state/offline';
 import { ArtistScreen } from './src/screens/ArtistScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
@@ -90,6 +92,10 @@ export default function App() {
     return () => sub.remove();
   }, []);
   useRecordPlays();
+  useConnectionWatch();
+  const client = useAuth((a) => a.client);
+  const offline = useOffline((s) => s.offline);
+  useEffect(() => { if (client && !offline) backfillOfflineMeta(client); }, [client, offline]);
   useQueueSync();
 
   return (

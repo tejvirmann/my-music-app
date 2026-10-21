@@ -166,6 +166,12 @@ export class JellyfinClient {
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
   }
 
+  /** Several items at once (used to fill in details for downloads made before offline support). */
+  itemsByIds(ids: string[]) {
+    const q = new URLSearchParams({ Ids: ids.join(','), Fields: 'Genres,ProductionYear', EnableImages: 'false', EnableUserData: 'false' });
+    return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+  }
+
   /** Full metadata for one item (song info screen). */
   item(id: string) {
     const q = new URLSearchParams({ Fields: 'Genres,MediaSources,Path,ProviderIds,ProductionYear,DateCreated' });

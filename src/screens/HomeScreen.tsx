@@ -3,7 +3,9 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 import { playNow } from '../player/queue';
 import { useRecentSources, useRecents } from '../player/recents';
+import { useDownloadedTracks, useLocalAlbums } from '../downloads';
 import { useAuth } from '../state/auth';
+import { useOffline } from '../state/offline';
 import { useSettings } from '../state/settings';
 import { useAppTitle } from '../brand';
 import { Art } from '../ui/Art';
@@ -30,22 +32,26 @@ export function HomeScreen({ navigation }: any) {
   const title = useAppTitle();
   const { showGreeting, greetingText } = useSettings();
   const client = useAuth((a) => a.client)!;
-  const recent = useRecents((r) => r.tracks).slice(0, 8);
+  const offline = useOffline((s) => s.offline);
+  const downloaded = useDownloadedTracks();
+  const localAlbums = useLocalAlbums();
+  const recent = useRecents((r) => r.tracks).filter((t) => !offline || downloaded.has(t.Id)).slice(0, 8);
   const pl = usePlaylists();
-  const albums = useQuery({ queryKey: ['recentAlbums'], queryFn: () => client.recentAlbums(20) });
-  const added = useQuery({ queryKey: ['recentSongs'], queryFn: () => client.recentSongs(10) });
+  const albums = useQuery({ queryKey: ['recentAlbums'], queryFn: () => client.recentAlbums(20), enabled: !offline });
+  const added = useQuery({ queryKey: ['recentSongs'], queryFn: () => client.recentSongs(10), enabled: !offline });
+  const albumItems = offline ? localAlbums : albums.data?.Items ?? [];
   const refreshing = albums.isRefetching || added.isRefetching || pl.isRefetching;
   const refresh = () => { albums.refetch(); added.refetch(); pl.refetch(); };
 
   const sources = useRecentSources((s) => s.sources);
   const open = (kind: 'playlist' | 'album', id: string, name: string) => () => navigation.navigate(kind === 'playlist' ? 'Playlist' : 'Album', { id, name });
   // Tiles: what you actually played from lately, topped up with your playlists and new albums.
-  const fromRecent = sources.filter((s) => s.kind === 'album' || pl.items.some((p) => p.Id === s.id)).map((s) => s.kind === 'playlist'
+  const fromRecent = sources.filter((s) => (s.kind === 'album' ? !offline || localAlbums.some((a) => a.Id === s.id) : pl.items.some((p) => p.Id === s.id))).map((s) => s.kind === 'playlist'
     ? { key: `p${s.id}`, cover: <PlaylistCover id={s.id} name={s.name} size={46} />, title: s.name, go: open('playlist', s.id, s.name) }
     : { key: `a${s.id}`, art: client.imageUrl(s.id, 160), title: s.name, go: open('album', s.id, s.name) });
   const fill = [
     ...pl.items.map((p) => ({ key: `p${p.Id}`, cover: <PlaylistCover id={p.Id} name={p.Name} size={46} />, title: p.Name, go: open('playlist', p.Id, p.Name) })),
-    ...(albums.data?.Items ?? []).map((a) => ({ key: `a${a.Id}`, art: client.imageUrl(a.Id, 160), title: a.Name, go: open('album', a.Id, a.Name) })),
+    ...albumItems.map((a) => ({ key: `a${a.Id}`, art: client.imageUrl(a.Id, 160), title: a.Name, go: open('album', a.Id, a.Name) })),
   ];
   const seen = new Set<string>();
   const tiles = [...fromRecent.slice(0, 6), ...fill].filter((t) => !seen.has(t.key) && !!seen.add(t.key)).slice(0, 6);
@@ -59,6 +65,8 @@ export function HomeScreen({ navigation }: any) {
         {showGreeting && <Heading title={greetingText.trim() || greeting()} />}
         {tiles.length > 0 && <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{tiles.map((t) => <Tile key={t.key} art={"art" in t ? t.art : undefined} cover={"cover" in t ? t.cover : undefined} title={t.title} onPress={t.go} />)}</View>}
 
+        {offline && !tiles.length && !recent.length ? <Empty text={'You are offline and nothing is downloaded yet.\nDownload a playlist or album while connected to play it here.'} /> : null}
+
         {recent.length > 0 ? (
           <>
             <Section title="Recently played" hint="swipe → queue" />
@@ -66,7 +74,7 @@ export function HomeScreen({ navigation }: any) {
               {recent.map((t, i) => <SongRow key={t.Id} track={t} onPress={() => playNow(client, recent, i, 'Recently played')} />)}
             </View>
           </>
-        ) : (
+        ) : offline ? null : (
           <>
             <Section title="Recently added" hint="swipe → queue" />
             <View style={{ marginHorizontal: -16 }}>
@@ -75,8 +83,8 @@ export function HomeScreen({ navigation }: any) {
           </>
         )}
 
-        <Section title="New albums" />
-        {albums.isLoading ? <Empty loading /> : albums.error ? <Empty text={(albums.error as Error).message} /> : (
+        {offline ? null : <Section title="New albums" />}
+        {offline ? null : albums.isLoading ? <Empty loading /> : albums.error ? <Empty text={(albums.error as Error).message} /> : (
           <FlatList horizontal data={albums.data?.Items ?? []} keyExtractor={(a) => a.Id} showsHorizontalScrollIndicator={false}
             style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }} ListEmptyComponent={<Empty text="No albums yet" />}
             renderItem={({ item }) => (

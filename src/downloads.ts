@@ -4,7 +4,8 @@ import { Image } from 'expo-image';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import type { JellyfinClient } from './api/jellyfin';
-import type { JfItem } from './api/types';
+import type { ItemsResponse, JfItem } from './api/types';
+import { isOffline } from './state/offline';
 
 /**
  * Pinned offline downloads (separate from any streaming cache).
@@ -16,7 +17,10 @@ db.execSync(`
   CREATE TABLE IF NOT EXISTS tracks (id TEXT PRIMARY KEY, path TEXT NOT NULL, size INTEGER DEFAULT 0);
   CREATE TABLE IF NOT EXISTS playlist_tracks (playlist_id TEXT NOT NULL, track_id TEXT NOT NULL, PRIMARY KEY (playlist_id, track_id));
   CREATE TABLE IF NOT EXISTS downloaded_playlists (playlist_id TEXT PRIMARY KEY);
+  CREATE TABLE IF NOT EXISTS dl_meta (key TEXT PRIMARY KEY, kind TEXT NOT NULL, name TEXT NOT NULL, artist TEXT, year INTEGER, count INTEGER DEFAULT 0, ordered INTEGER DEFAULT 0);
 `);
+// What the offline screens need: each song's details, and each song's place in its playlist/album. Added to databases made by earlier builds.
+for (const sql of ['ALTER TABLE tracks ADD COLUMN meta TEXT', 'ALTER TABLE playlist_tracks ADD COLUMN pos INTEGER DEFAULT 0']) { try { db.execSync(sql); } catch {} }
 
 /** UI state: `rev` bumps whenever downloads change; `progress` is "done/total" per playlist in flight. */
 const useStore = create<{ rev: number; progress: Record<string, string> }>(() => ({ rev: 0, progress: {} }));
@@ -81,40 +85,127 @@ export function totalBytes(): number {
   return db.getFirstSync<{ n: number }>('SELECT COALESCE(SUM(size),0) AS n FROM tracks')?.n ?? 0;
 }
 
-/** Sequential on purpose: gentle on the home server. */
+export type DlInfo = { kind: 'playlist' | 'album' | 'song'; name: string };
+
+/** Sequential on purpose: gentle on the home server. Progress reads "3/13 · 45%" (songs done, and how far the current one is). */
 export async function downloadPlaylist(
   client: JellyfinClient,
   playlistId: string,
   tracks: JfItem[],
   onProgress?: (done: number, total: number) => void,
+  info?: DlInfo,
 ) {
   if (useStore.getState().progress[playlistId]) return; // already running
   dir.create({ idempotent: true, intermediates: true });
   // Warm the on-disk image cache so artwork also shows offline.
   const artIds = [...new Set(tracks.map((t) => t.AlbumId ?? t.Id))];
-  Image.prefetch(artIds.flatMap((id) => [client.imageUrl(id, 160), client.imageUrl(id, 640)]), 'disk').catch(() => {});
+  Image.prefetch(artIds.flatMap((id) => [160, 320, 640].map((w) => client.imageUrl(id, w))), 'disk').catch(() => {});
   let done = 0;
-  setProgress(playlistId, `0/${tracks.length}`);
+  const total = tracks.length;
+  setProgress(playlistId, `0/${total}`);
   try {
-    for (const t of tracks) {
+    for (const [pos, t] of tracks.entries()) {
       if (!localPath(t.Id)) {
         const container = (t.MediaSources ?? (await client.item(t.Id).catch(() => undefined))?.MediaSources)?.[0]?.Container;
-        const file = await File.downloadFileAsync(client.streamUrl(t.Id), new File(dir, `${t.Id}.${extFor(container)}`), { idempotent: true });
+        let last = -1;
+        const file = await File.downloadFileAsync(client.streamUrl(t.Id), new File(dir, `${t.Id}.${extFor(container)}`), {
+          idempotent: true,
+          onProgress: ({ bytesWritten, totalBytes }) => {
+            if (totalBytes <= 0) return;
+            const pct = Math.min(99, Math.floor((bytesWritten / totalBytes) * 20) * 5);
+            if (pct !== last) { last = pct; setProgress(playlistId, `${done}/${total} · ${pct}%`); }
+          },
+        });
         db.runSync('INSERT OR REPLACE INTO tracks (id, path, size) VALUES (?, ?, ?)', t.Id, file.uri, file.size ?? 0);
       }
-      db.runSync('INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id) VALUES (?, ?)', playlistId, t.Id);
-      onProgress?.(++done, tracks.length);
-      setProgress(playlistId, `${done}/${tracks.length}`);
+      const { MediaSources: _ms, ...slim } = t;
+      db.runSync('UPDATE tracks SET meta = ? WHERE id = ?', JSON.stringify(slim), t.Id);
+      db.runSync('INSERT OR REPLACE INTO playlist_tracks (playlist_id, track_id, pos) VALUES (?, ?, ?)', playlistId, t.Id, pos);
+      onProgress?.(++done, total);
+      setProgress(playlistId, `${done}/${total}`);
     }
     db.runSync('INSERT OR IGNORE INTO downloaded_playlists (playlist_id) VALUES (?)', playlistId);
+    if (info) {
+      const first = tracks[0];
+      db.runSync('INSERT OR REPLACE INTO dl_meta (key, kind, name, artist, year, count, ordered) VALUES (?, ?, ?, ?, ?, ?, 1)',
+        playlistId, info.kind, info.name, first?.AlbumArtist ?? first?.Artists?.[0] ?? null, first?.ProductionYear ?? null, total);
+    }
   } finally {
     setProgress(playlistId, undefined);
   }
 }
 
+// ---- Offline reads: everything below answers from this database, never from the network. ----
+
+const parse = (rows: { meta: string }[]) => rows.map((r) => JSON.parse(r.meta) as JfItem);
+
+/** A downloaded playlist/album/song's tracks in order, or null if it was never downloaded (or predates offline details). */
+export function localTracks(key: string): JfItem[] | null {
+  const rows = db.getAllSync<{ meta: string }>(
+    'SELECT t.meta FROM playlist_tracks p JOIN tracks t ON t.id = p.track_id WHERE p.playlist_id = ? AND t.meta IS NOT NULL ORDER BY p.pos', key);
+  return rows.length ? parse(rows) : null;
+}
+
+/** Same shape as a Jellyfin list response, so a screen can use it as a drop-in. */
+export function localResponse(key: string): ItemsResponse | null {
+  const items = localTracks(key);
+  return items ? { Items: items, TotalRecordCount: items.length } : null;
+}
+
+/** Network first, but the downloaded copy when offline, or when the request fails. */
+export async function orLocal(key: string, net: () => Promise<ItemsResponse>): Promise<ItemsResponse> {
+  const local = localResponse(key);
+  if (local && isOffline()) return local;
+  try { return await net(); } catch (e) { if (local) return local; throw e; }
+}
+
+const collections = (kind: DlInfo['kind']) => memo(() => db.getAllSync<{ key: string; name: string; artist: string | null; year: number | null; count: number }>(
+  'SELECT m.key, m.name, m.artist, m.year, m.count FROM dl_meta m JOIN downloaded_playlists d ON d.playlist_id = m.key WHERE m.kind = ? ORDER BY m.name COLLATE NOCASE', kind));
+const playlistRows = collections('playlist'), albumRows = collections('album');
+
+/** Downloaded playlists as Jellyfin-style items, for the offline Home / Library / Search. */
+export function useLocalPlaylists(): JfItem[] {
+  return playlistRows(useStore((s) => s.rev)).map((r) => ({ Id: r.key, Name: r.name, Type: 'Playlist', ChildCount: r.count }));
+}
+export function useLocalAlbums(): JfItem[] {
+  return albumRows(useStore((s) => s.rev)).map((r) => ({ Id: r.key.replace(/^album:/, ''), Name: r.name, Type: 'MusicAlbum', AlbumArtist: r.artist ?? undefined, ProductionYear: r.year ?? undefined, ChildCount: r.count }));
+}
+
+let backfilling = false;
+/**
+ * Downloads made before offline support have files but no song details, names or order. While online, fill those in from Jellyfin
+ * once, so they show up offline too.
+ */
+export async function backfillOfflineMeta(client: JellyfinClient) {
+  if (backfilling) return;
+  backfilling = true;
+  try {
+    const missing = db.getAllSync<{ id: string }>('SELECT id FROM tracks WHERE meta IS NULL').map((r) => r.id);
+    for (let i = 0; i < missing.length; i += 50) {
+      const r = await client.itemsByIds(missing.slice(i, i + 50));
+      for (const t of r.Items) { const { MediaSources: _ms, ...slim } = t; db.runSync('UPDATE tracks SET meta = ? WHERE id = ?', JSON.stringify(slim), t.Id); }
+    }
+    const keys = db.getAllSync<{ playlist_id: string }>(
+      'SELECT d.playlist_id FROM downloaded_playlists d LEFT JOIN dl_meta m ON m.key = d.playlist_id WHERE m.key IS NULL OR m.ordered = 0').map((r) => r.playlist_id);
+    for (const key of keys) {
+      const kind: DlInfo['kind'] = key.startsWith('album:') ? 'album' : key.startsWith('song:') ? 'song' : 'playlist';
+      const id = key.replace(/^(album|song):/, '');
+      const list = kind === 'song' ? { Items: [await client.item(id)] } : kind === 'album' ? await client.albumTracks(id) : await client.playlistTracks(id);
+      list.Items.forEach((t, pos) => db.runSync('UPDATE playlist_tracks SET pos = ? WHERE playlist_id = ? AND track_id = ?', pos, key, t.Id));
+      const name = kind === 'song' ? list.Items[0]?.Name : kind === 'album' ? list.Items[0]?.Album : (await client.playlists()).Items.find((p) => p.Id === id)?.Name;
+      if (!name) continue;
+      const first = list.Items[0];
+      db.runSync('INSERT OR REPLACE INTO dl_meta (key, kind, name, artist, year, count, ordered) VALUES (?, ?, ?, ?, ?, ?, 1)',
+        key, kind, name, first?.AlbumArtist ?? first?.Artists?.[0] ?? null, first?.ProductionYear ?? null, list.Items.length);
+    }
+    if (missing.length || keys.length) bump();
+  } catch { /* offline or server busy: try again next launch */ } finally { backfilling = false; }
+}
+
 export function removePlaylistDownload(playlistId: string) {
   db.runSync('DELETE FROM playlist_tracks WHERE playlist_id = ?', playlistId);
   db.runSync('DELETE FROM downloaded_playlists WHERE playlist_id = ?', playlistId);
+  db.runSync('DELETE FROM dl_meta WHERE key = ?', playlistId);
   const orphans = db.getAllSync<{ id: string; path: string }>(
     'SELECT id, path FROM tracks WHERE id NOT IN (SELECT track_id FROM playlist_tracks)',
   );

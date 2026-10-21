@@ -21,6 +21,6 @@ export function toggleDownload(client: JellyfinClient, kind: DlKind, id: string,
   }
   const items = kind === 'song' && song ? Promise.resolve([song]) : kind === 'album' ? client.albumTracks(id).then((r) => r.Items) : client.playlistTracks(id).then((r) => r.Items);
   toast('Downloading…', name);
-  items.then((list) => downloadPlaylist(client, key, list)).then(() => toast('Downloaded', name))
+  items.then((list) => downloadPlaylist(client, key, list, undefined, { kind, name })).then(() => toast('Downloaded', name))
     .catch((e: any) => Alert.alert('Download failed', e.message));
 }

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, PanResponder, Pressable, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, Easing, Pressable, View, useWindowDimensions } from 'react-native';
 import { PanGestureHandler, State as GState } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TrackPlayer, { RepeatMode, useActiveTrack, useProgress } from 'react-native-track-player';
@@ -71,35 +71,55 @@ function Carousel({ size }: { size: number }) {
   );
 }
 
-/** Seek bar. Drag the knob; seeks on release. */
+/**
+ * Seek bar. Drag anywhere on it (or tap); seeks on release. While dragging, the knob follows the finger and ignores the playback clock.
+ * After release it stays where you put it until the player catches up, instead of snapping back to the old position.
+ */
 function Scrubber({ position, duration }: { position: number; duration: number }) {
   const c = useColors();
   const [w, setW] = useState(1);
   const [drag, setDrag] = useState<number | null>(null);
+  const [landed, setLanded] = useState<number | null>(null);
   const dragRef = useRef<number | null>(null);
   const dur = useRef(duration);
   dur.current = duration;
   const wRef = useRef(1);
   const ratio = (px: number) => Math.max(0, Math.min(1, px / wRef.current));
-  const pan = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderGrant: (e) => { dragRef.current = ratio(e.nativeEvent.locationX); setDrag(dragRef.current); },
-    onPanResponderMove: (e) => { dragRef.current = ratio(e.nativeEvent.locationX); setDrag(dragRef.current); },
-    onPanResponderRelease: () => { if (dragRef.current != null && dur.current) TrackPlayer.seekTo(dragRef.current * dur.current); dragRef.current = null; setDrag(null); },
-    onPanResponderTerminate: () => { dragRef.current = null; setDrag(null); },
-  })).current;
-  const p = drag ?? (duration ? Math.min(1, position / duration) : 0);
-  const shown = drag != null ? drag * duration : position;
+
+  // Let go of the held spot once playback reports (roughly) that position, or after a moment in case it never does.
+  useEffect(() => {
+    if (landed == null) return;
+    if (duration && Math.abs(position - landed * duration) < 1.5) setLanded(null);
+  }, [position]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (landed == null) return;
+    const t = setTimeout(() => setLanded(null), 1500);
+    return () => clearTimeout(t);
+  }, [landed]);
+
+  const onMove = (e: any) => { dragRef.current = ratio(e.nativeEvent.x); setDrag(dragRef.current); };
+  const onState = (e: any) => {
+    const { state, x } = e.nativeEvent;
+    if (state === GState.BEGAN) { dragRef.current = ratio(x); setDrag(dragRef.current); return; }
+    if (state !== GState.END && state !== GState.CANCELLED && state !== GState.FAILED) return;
+    const r = dragRef.current;
+    dragRef.current = null;
+    setDrag(null);
+    if (state === GState.END && r != null && dur.current) { setLanded(r); TrackPlayer.seekTo(r * dur.current).catch(() => setLanded(null)); }
+  };
+
+  const p = drag ?? landed ?? (duration ? Math.min(1, position / duration) : 0);
+  const shown = (drag ?? landed) != null ? p * duration : position;
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 14 }}>
-      <View style={{ height: 28, justifyContent: 'center' }} onLayout={(e) => { setW(e.nativeEvent.layout.width); wRef.current = e.nativeEvent.layout.width; }} {...pan.panHandlers}>
-        <View pointerEvents="none" style={{ height: 3, backgroundColor: c.line }}>
-          <View style={{ height: 3, width: p * w, backgroundColor: c.fg }} />
+      <PanGestureHandler minDist={0} shouldCancelWhenOutside={false} hitSlop={{ top: 14, bottom: 14 }} onGestureEvent={onMove} onHandlerStateChange={onState}>
+        <View style={{ height: 28, justifyContent: 'center' }} onLayout={(e) => { setW(e.nativeEvent.layout.width); wRef.current = e.nativeEvent.layout.width; }}>
+          <View pointerEvents="none" style={{ height: 3, backgroundColor: c.line }}>
+            <View style={{ height: 3, width: p * w, backgroundColor: c.fg }} />
+          </View>
+          <View pointerEvents="none" style={{ position: 'absolute', left: p * w - 6, width: 12, height: 12, borderRadius: 6, backgroundColor: c.fg }} />
         </View>
-        <View pointerEvents="none" style={{ position: 'absolute', left: p * w - 6, width: 12, height: 12, borderRadius: 6, backgroundColor: c.fg }} />
-      </View>
+      </PanGestureHandler>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Txt v="small">{fmt(shown)}</Txt><Txt v="small">{fmt(duration)}</Txt>
       </View>

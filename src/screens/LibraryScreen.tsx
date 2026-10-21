@@ -5,9 +5,10 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import type { JfItem } from '../api/types';
 import { dlKey } from '../downloadActions';
-import { useDownloadedPlaylists, useDownloadProgress } from '../downloads';
+import { useDownloadedPlaylists, useDownloadProgress, useLocalAlbums } from '../downloads';
 import { useAuth } from '../state/auth';
 import { useLibraryPrefs } from '../state/library';
+import { useOffline } from '../state/offline';
 import { PlaylistCover } from '../ui/PlaylistCover';
 import { Art } from '../ui/Art';
 import { Empty, Heading, IconBtn, Pill, Screen, TopBar } from '../ui/layout';
@@ -41,6 +42,8 @@ export function LibraryScreen({ navigation }: any) {
   const downloaded = useDownloadedPlaylists();
   const pl = usePlaylists();
   const unhideAll = useLibraryPrefs((s) => s.unhideAll);
+  const offline = useOffline((s) => s.offline);
+  const localAlbums = useLocalAlbums();
   const albums = useInfiniteQuery({
     queryKey: ['albums'], initialPageParam: 0, staleTime: 5 * 60_000,
     queryFn: ({ pageParam }) => client.albums(pageParam, PAGE),
@@ -54,8 +57,8 @@ export function LibraryScreen({ navigation }: any) {
 
   const isPl = tab === 'pl';
   const playlists = pl.items.filter((p) => !dlOnly || downloaded.has(p.Id));
-  const alb = (albums.data?.pages.flatMap((p) => p.Items) ?? []).filter((a) => !dlOnly || downloaded.has(dlKey('album', a.Id)));
-  const loading = isPl ? pl.isLoading : albums.isLoading;
+  const alb = (offline ? localAlbums : albums.data?.pages.flatMap((p) => p.Items) ?? []).filter((a) => !dlOnly || downloaded.has(dlKey('album', a.Id)));
+  const loading = !offline && (isPl ? pl.isLoading : albums.isLoading);
   const header = (
     <View>
       <Heading title="Your library" />
@@ -83,7 +86,7 @@ export function LibraryScreen({ navigation }: any) {
         ListFooterComponent={isPl && pl.hidden.length && !dlOnly ? (
           <Txt v="mute" style={{ paddingHorizontal: 16, paddingTop: 12 }} onPress={unhideAll}>{pl.hidden.length} hidden · show all</Txt>
         ) : undefined}
-        onEndReached={() => !isPl && albums.hasNextPage && albums.fetchNextPage()}
+        onEndReached={() => !isPl && !offline && albums.hasNextPage && albums.fetchNextPage()}
         onRefresh={() => { pl.refetch(); albums.refetch(); }} refreshing={pl.isRefetching || albums.isRefetching}
         renderItem={({ item }) => item.Id === '__pad' ? <View style={{ flex: 1 }} /> : isPl ? (
           <PlaylistRow item={item} pinned={pl.pinned.includes(item.Id)} onOpen={() => navigation.navigate('Playlist', { id: item.Id, name: item.Name })} />

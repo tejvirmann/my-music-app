@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Pressable, View } from 'react-native';
 
 import { dlKey, toggleDownload } from '../downloadActions';
-import { useDownloadedPlaylists, useDownloadProgress } from '../downloads';
+import { orLocal, useDownloadedPlaylists, useDownloadProgress } from '../downloads';
 import { setLiked, useLiked } from '../likes';
 import { playNow } from '../player/queue';
 import { useAuth } from '../state/auth';
@@ -20,7 +20,7 @@ export function AlbumScreen({ route, navigation }: any) {
   const client = useAuth((a) => a.client)!;
   const qc = useQueryClient();
   const { id, name } = route.params;
-  const { data, isLoading, error } = useQuery({ queryKey: ['album', id], queryFn: () => client.albumTracks(id) });
+  const { data, isLoading, error } = useQuery({ queryKey: ['album', id], queryFn: () => orLocal(dlKey('album', id), () => client.albumTracks(id)) });
   const liked = useLiked().data?.entries ?? {};
   const key = dlKey('album', id);
   const isDl = useDownloadedPlaylists().has(key);

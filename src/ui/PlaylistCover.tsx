@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { View } from 'react-native';
 
+import { orLocal } from '../downloads';
 import { LIKED_NAME } from '../likes';
 import { useAuth } from '../state/auth';
 import { DEFAULT_COVER, useCovers } from '../state/covers';
@@ -31,7 +32,7 @@ export function PlaylistCover({ id, name, size }: { id: string; name: string; si
   const clipsImg = useCovers((x) => x.map[DEFAULT_COVER.clips]);
   const unknownImg = useCovers((x) => x.map[DEFAULT_COVER.unknown]);
   const isClips = name.trim().toLowerCase() === 'clips';
-  const { data } = useQuery({ queryKey: ['playlistCover', id, 2], queryFn: () => client.playlistCover(id), enabled: !custom && !liked, staleTime: 30 * 60_000 });
+  const { data } = useQuery({ queryKey: ['playlistCover', id, 2], queryFn: () => orLocal(id, () => client.playlistCover(id)), enabled: !custom && !liked, staleTime: 30 * 60_000 });
   // Only tracks that really have a picture: voice clips etc. would otherwise leave blank squares in the collage.
   const artIds = (data?.Items ?? []).flatMap((t) => (t.AlbumPrimaryImageTag ? [t.AlbumId ?? t.Id] : t.ImageTags?.Primary ? [t.Id] : []));
   const first4 = [...new Set(artIds.slice(0, 4))];

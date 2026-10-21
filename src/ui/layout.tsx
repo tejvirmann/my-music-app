@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { checkConnection, useOffline } from '../state/offline';
 import { IconBtn } from './IconBtn';
 import { MiniPlayer } from './MiniPlayer';
 import { Txt } from './text';
@@ -12,8 +13,14 @@ export { IconBtn };
 export function Screen({ children, mini, style }: { children: React.ReactNode; mini?: boolean; style?: ViewStyle }) {
   const c = useColors();
   const inset = useSafeAreaInsets();
+  const offline = useOffline((s) => s.offline);
   return (
     <View style={[{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top }, style]}>
+      {offline && (
+        <Pressable onPress={checkConnection} style={{ backgroundColor: c.card, paddingVertical: 6, paddingHorizontal: 16 }}>
+          <Txt v="small">Offline · showing downloads only · tap to retry</Txt>
+        </Pressable>
+      )}
       {children}
       {mini && <View style={{ paddingBottom: inset.bottom }}><MiniPlayer /></View>}
     </View>
