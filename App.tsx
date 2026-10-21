@@ -38,7 +38,7 @@ import { useColors, useIsDark } from './src/ui/theme';
 
 const DAY = 24 * 60 * 60_000;
 // Cached data stays usable for a week and is shown at once; fetches that fail (home lab asleep) keep it on screen.
-const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 60_000, gcTime: 7 * DAY, networkMode: 'offlineFirst' } } });
+const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 5 * 60_000, gcTime: 7 * DAY, networkMode: 'offlineFirst' } } });
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 

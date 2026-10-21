@@ -73,13 +73,20 @@ export class JellyfinClient {
     return `${this.s.serverUrl}/Audio/${id}/stream?static=true&ApiKey=${this.s.token}`;
   }
 
-  albums(startIndex = 0, limit = 100, search?: string) {
+  albums(startIndex = 0, limit = 100, search?: string, sorted = true) {
     const q = new URLSearchParams({
-      IncludeItemTypes: 'MusicAlbum', Recursive: 'true', SortBy: 'SortName',
+      IncludeItemTypes: 'MusicAlbum', Recursive: 'true',
       Fields: 'ChildCount,ProductionYear', StartIndex: String(startIndex), Limit: String(limit),
     });
+    if (sorted) q.set('SortBy', 'SortName');
     if (search) q.set('SearchTerm', search);
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+  }
+
+  /** Cheap "has the library changed?" probe: one row, just the total. */
+  async count(type: 'Audio' | 'MusicAlbum') {
+    const q = new URLSearchParams({ IncludeItemTypes: type, Recursive: 'true', Limit: '1', EnableImages: 'false', EnableUserData: 'false' });
+    return (await this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`)).TotalRecordCount;
   }
 
   albumTracks(albumId: string) {
@@ -91,7 +98,7 @@ export class JellyfinClient {
 
   searchTracks(term: string) {
     const q = new URLSearchParams({
-      IncludeItemTypes: 'Audio', Recursive: 'true', SearchTerm: term, Limit: '50',
+      IncludeItemTypes: 'Audio', Recursive: 'true', SearchTerm: term, Limit: '50', EnableTotalRecordCount: 'false',
     });
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
   }
@@ -101,7 +108,7 @@ export class JellyfinClient {
     const out: JfItem[] = [];
     for (let i = 0; ; i += 2000) {
       const q = new URLSearchParams({
-        IncludeItemTypes: 'Audio', Recursive: 'true', SortBy: 'SortName', Fields: 'Genres,ProductionYear',
+        IncludeItemTypes: 'Audio', Recursive: 'true', Fields: 'Genres,ProductionYear',
         StartIndex: String(i), Limit: '2000', EnableImages: 'false',
       });
       const r = await this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
@@ -113,26 +120,26 @@ export class JellyfinClient {
   async allAlbums() {
     const out: JfItem[] = [];
     for (let i = 0; ; i += 2000) {
-      const r = await this.albums(i, 2000);
+      const r = await this.albums(i, 2000, undefined, false);
       out.push(...r.Items);
       if (out.length >= r.TotalRecordCount || !r.Items.length) return out;
     }
   }
 
   recentAlbums(limit = 20) {
-    const q = new URLSearchParams({ IncludeItemTypes: 'MusicAlbum', Recursive: 'true', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: String(limit) });
+    const q = new URLSearchParams({ IncludeItemTypes: 'MusicAlbum', Recursive: 'true', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: String(limit), EnableTotalRecordCount: 'false' });
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
   }
 
   recentSongs(limit = 20) {
-    const q = new URLSearchParams({ IncludeItemTypes: 'Audio', Recursive: 'true', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: String(limit) });
+    const q = new URLSearchParams({ IncludeItemTypes: 'Audio', Recursive: 'true', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: String(limit), EnableTotalRecordCount: 'false' });
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
   }
 
   /** One request per type so the UI can show Songs / Albums / Playlists sections. */
   async search(term: string) {
     const one = (type: string, limit: number) => {
-      const q = new URLSearchParams({ IncludeItemTypes: type, Recursive: 'true', SearchTerm: term, Limit: String(limit), Fields: 'ChildCount' });
+      const q = new URLSearchParams({ IncludeItemTypes: type, Recursive: 'true', SearchTerm: term, Limit: String(limit), Fields: 'ChildCount', EnableTotalRecordCount: 'false' });
       return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
     };
     const [songs, albums, playlists] = await Promise.all([one('Audio', 30), one('MusicAlbum', 15), one('Playlist', 10)]);
@@ -191,6 +198,12 @@ export class JellyfinClient {
 
   playlistTracks(playlistId: string) {
     return this.req<ItemsResponse>(`/Playlists/${playlistId}/Items?userId=${this.s.userId}`);
+  }
+
+  /** First few entries only: enough to draw a cover without pulling the whole playlist. */
+  playlistCover(playlistId: string) {
+    const q = new URLSearchParams({ userId: this.s.userId, limit: '16', enableImages: 'false', enableUserData: 'false' });
+    return this.req<ItemsResponse>(`/Playlists/${playlistId}/Items?${q}`);
   }
 
   createPlaylist(name: string, trackIds: string[] = []) {

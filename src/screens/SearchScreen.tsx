@@ -5,6 +5,7 @@ import { Pressable, TextInput, View } from 'react-native';
 import type { JfItem } from '../api/types';
 import { addToQueue, playNow } from '../player/queue';
 import { useAuth } from '../state/auth';
+import { isFresh, loadIndex, saveIndex } from '../storage/searchIndex';
 import { useSettings } from '../state/settings';
 import { Icon } from '../ui/Icon';
 import { Body, Empty, IconBtn, Pill, Screen, Section, TopBar, fmt } from '../ui/layout';
@@ -22,8 +23,27 @@ const tokens = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean);
 /** Everything is matched on the phone against a cached index, so results appear as you type and cover year/genre too. */
 function useIndex() {
   const client = useAuth((a) => a.client)!;
-  const songs = useQuery({ queryKey: ['songIndex'], queryFn: () => client.allSongs(), staleTime: 10 * 60_000, gcTime: Infinity });
-  const albums = useQuery({ queryKey: ['albumIndex'], queryFn: () => client.allAlbums(), staleTime: 10 * 60_000, gcTime: Infinity });
+  const userId = useAuth((a) => a.session!.userId);
+  // Saved copy is reused when the server's song/album totals still match (two 1-row probes) and it is under a day old.
+  const index = useQuery({
+    queryKey: ['searchIndex', userId], staleTime: 30 * 60_000, gcTime: Infinity,
+    queryFn: async () => {
+      const saved = await loadIndex(userId);
+      if (saved && isFresh(saved)) {
+        try {
+          const [ns, na] = await Promise.all([client.count('Audio'), client.count('MusicAlbum')]);
+          if (ns === saved.songs.length && na === saved.albums.length) return saved;
+        } catch { return saved; }
+      }
+      let songs: JfItem[], albums: JfItem[];
+      try { [songs, albums] = await Promise.all([client.allSongs(), client.allAlbums()]); } catch (e) { if (saved) return saved; throw e; }
+      const fresh = { userId, at: Date.now(), songs, albums };
+      saveIndex(fresh);
+      return fresh;
+    },
+  });
+  const songs = { data: index.data?.songs, isLoading: index.isLoading };
+  const albums = { data: index.data?.albums };
   const rows = useMemo(() => (songs.data ?? []).map((s) => ({
     s, f: { title: s.Name, artist: (s.Artists ?? [s.AlbumArtist ?? '']).join(' '), album: s.Album ?? '', year: String(s.ProductionYear ?? ''), genre: (s.Genres ?? []).join(' ') },
   })), [songs.data]);

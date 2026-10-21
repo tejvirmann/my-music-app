@@ -92,7 +92,7 @@ function AddToPlaylist({ ids, title, sub, art }: { ids: string[]; title: string;
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ['playlists'], queryFn: () => client.playlists() });
   const hidden = useLibraryPrefs((s) => s.hidden);
-  const refresh = () => { qc.invalidateQueries({ queryKey: ['playlists'] }); qc.invalidateQueries({ queryKey: ['playlist'] }); };
+  const refresh = () => { qc.invalidateQueries({ queryKey: ['playlists'] }); qc.invalidateQueries({ queryKey: ['playlist'] }); qc.invalidateQueries({ queryKey: ['playlistCover'] }); };
   const add = (id: string, name: string) => run(async () => { await client.addToPlaylist(id, ids); refresh(); toast(`Added to ${name}`); })();
   const create = () => {
     close();

@@ -22,7 +22,7 @@ export function PlaylistCover({ id, name, size }: { id: string; name: string; si
   const client = useAuth((a) => a.client)!;
   const custom = useCovers((s) => s.map[id]);
   const liked = name === LIKED_NAME;
-  const { data } = useQuery({ queryKey: ['playlist', id], queryFn: () => client.playlistTracks(id), enabled: !custom && !liked, staleTime: 5 * 60_000 });
+  const { data } = useQuery({ queryKey: ['playlistCover', id], queryFn: () => client.playlistCover(id), enabled: !custom && !liked, staleTime: 30 * 60_000 });
   const first4 = [...new Set((data?.Items ?? []).slice(0, 4).map((t) => t.AlbumId ?? t.Id))];
   // Different album items can carry the very same picture (e.g. a playlist of one series); compare the pixels, not the ids.
   const { data: sameArt } = useQuery({

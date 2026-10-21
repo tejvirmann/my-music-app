@@ -26,7 +26,7 @@ export function PlaylistScreen({ route, navigation }: any) {
   const dlTracks = useDownloadedTracks();
   const stale = isDl && tracks.some((t) => !dlTracks.has(t.Id));
   const mins = Math.round(tracks.reduce((n, t) => n + (t.RunTimeTicks ?? 0) / 6e8, 0));
-  const refresh = () => { qc.invalidateQueries({ queryKey: key }); qc.invalidateQueries({ queryKey: ['playlists'] }); };
+  const refresh = () => { qc.invalidateQueries({ queryKey: key }); qc.invalidateQueries({ queryKey: ['playlists'] }); qc.invalidateQueries({ queryKey: ['playlistCover'] }); };
   const shuffled = () => [...tracks].sort(() => Math.random() - 0.5);
 
   return (
