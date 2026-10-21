@@ -12,8 +12,8 @@ import { recordSource } from './recents';
 export type QTrack = Track & { queued?: boolean; albumId?: string };
 
 /** Mirror of the native queue so screens can render it. Refreshed after every mutation and on track change. */
-export const usePlayer = create<{ tracks: QTrack[]; index: number; ctxName: string; shuffle: boolean }>(() => ({
-  tracks: [], index: -1, ctxName: '', shuffle: false,
+export const usePlayer = create<{ tracks: QTrack[]; index: number; ctxName: string; ctx: PlaySource | null; shuffle: boolean }>(() => ({
+  tracks: [], index: -1, ctxName: '', ctx: null, shuffle: false,
 }));
 /** Upcoming context tracks in their pre-shuffle order, so turning shuffle off can restore it. */
 let originalOrder: string[] = [];
@@ -63,7 +63,7 @@ export async function playNow(client: JellyfinClient, items: JfItem[], index = 0
   await TrackPlayer.add(items.map((i) => toTrack(client, i)));
   await TrackPlayer.skip(index);
   originalOrder = [];
-  usePlayer.setState({ ctxName: name, shuffle: false });
+  usePlayer.setState({ ctxName: name, ctx: source ?? null, shuffle: false });
   await TrackPlayer.play();
   await syncQueue();
 }

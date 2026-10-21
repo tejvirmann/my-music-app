@@ -3,9 +3,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Animated, Easing, PanResponder, Pressable, View, useWindowDimensions } from 'react-native';
 import { PanGestureHandler, State as GState } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import TrackPlayer, { RepeatMode, State, useActiveTrack, usePlaybackState, useProgress } from 'react-native-track-player';
+import TrackPlayer, { RepeatMode, useActiveTrack, useProgress } from 'react-native-track-player';
 
 import { setLiked, useLiked } from '../likes';
+import { navigate } from '../navigation/ref';
+import { skipNext, skipPrev, useIsPlaying } from '../player/controls';
 import { cycleRepeat, setShuffle, trackToItem, usePlayer } from '../player/queue';
 import { useAuth } from '../state/auth';
 import { Art } from '../ui/Art';
@@ -42,7 +44,7 @@ function Carousel({ size }: { size: number }) {
     const prev = (dx > step * 0.28 || vx > 600) && dx > 0 && lim.current.hasPrev;
     if (!next && !prev) { Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start(); return; }
     busy.current = true;
-    (next ? TrackPlayer.skipToNext() : TrackPlayer.skipToPrevious()).catch(() => {});
+    (next ? skipNext() : skipPrev(true)).catch(() => {});
     Animated.timing(x, { toValue: next ? -step : step, duration: 170, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     setTimeout(() => { x.setValue(0); busy.current = false; }, 1200); // safety if the track-changed event never arrives
   };
@@ -112,12 +114,11 @@ export function NowPlayingScreen({ navigation }: any) {
   const client = useAuth((a) => a.client)!;
   const qc = useQueryClient();
   const track = useActiveTrack();
-  const { state } = usePlaybackState();
   const { position, duration } = useProgress(250);
-  const { ctxName, shuffle, tracks, index } = usePlayer();
+  const { ctxName, ctx, shuffle, tracks, index } = usePlayer();
   const [repeat, setRepeat] = useState(RepeatMode.Off);
   const liked = useLiked().data?.entries ?? {};
-  const playing = state === State.Playing;
+  const playing = useIsPlaying();
   const id = track ? String(track.id) : '';
   const info = useQuery({ queryKey: ['song', id], queryFn: () => client.item(id), enabled: !!id, staleTime: 10 * 60_000 });
   useEffect(() => { TrackPlayer.getRepeatMode().then(setRepeat).catch(() => {}); }, []);
@@ -135,16 +136,21 @@ export function NowPlayingScreen({ navigation }: any) {
   const audio = src?.MediaStreams?.find((m) => m.Type === 'Audio');
   const format = [src?.Container?.toUpperCase(), audio?.SampleRate ? `${audio.SampleRate / 1000} kHz` : null, (audio?.BitRate ?? src?.Bitrate) ? `${Math.round((audio?.BitRate ?? src?.Bitrate)! / 1000)} kbps` : null].filter(Boolean).join(' · ');
   const art = Math.min(width - 96, 320);
+  // Where "playing from" leads: the playlist/album the queue was started from, else this song's own album.
+  const albumId = (track as any).albumId as string | undefined;
+  const dest = ctx ? { screen: ctx.kind === 'playlist' ? 'Playlist' : 'Album', params: { id: ctx.id, name: ctx.name } }
+    : albumId ? { screen: 'Album', params: { id: albumId, name: track.album ?? '' } } : null;
+  const goTo = (screen: string, params: object) => { navigation.goBack(); setTimeout(() => navigate(screen, params), 50); };
   const like = () => setLiked(client, qc, [id], !isLiked).then(() => toast(isLiked ? 'Removed from Liked' : 'Added to Liked')).catch((e) => Alert.alert('Failed', e.message));
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: Math.max(inset.top, 14), paddingBottom: inset.bottom + 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 14 }}>
         <IconBtn name="down" size={28} label="Close" onPress={() => navigation.goBack()} />
-        <View style={{ alignItems: 'center', flex: 1 }}>
+        <Pressable disabled={!dest} onPress={() => dest && goTo(dest.screen, dest.params)} style={{ alignItems: 'center', flex: 1 }} accessibilityLabel={dest ? `Open ${dest.params.name}` : undefined}>
           <Txt v="label">playing from</Txt>
           <Txt numberOfLines={1}>{ctxName || 'Queue'}</Txt>
-        </View>
+        </Pressable>
         <IconBtn name="dots" label="More" onPress={() => openSongMenu(trackToItem(track))} />
       </View>
 
@@ -154,7 +160,7 @@ export function NowPlayingScreen({ navigation }: any) {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16 }}>
         <View style={{ flex: 1, paddingRight: 12 }}>
           <Txt v="h2" numberOfLines={2} style={{ fontSize: 30, lineHeight: 32 }}>{track.title}</Txt>
-          <Txt v="mute" numberOfLines={1}>{track.artist}</Txt>
+          <Txt v="mute" numberOfLines={1} onPress={track.artist ? () => goTo('Artist', { name: String(track.artist).split(', ')[0] }) : undefined}>{track.artist}</Txt>
         </View>
         <IconBtn name={isLiked ? 'heart' : 'heartO'} size={28} color={isLiked ? c.accent : c.mute} label={isLiked ? 'Unlike' : 'Like'} onPress={like} />
       </View>
@@ -163,12 +169,12 @@ export function NowPlayingScreen({ navigation }: any) {
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8 }}>
         <IconBtn name="shuf" size={24} color={shuffle ? c.accent : c.mute} label="Shuffle upcoming" onPress={() => setShuffle(!shuffle).then(() => toast(shuffle ? 'Shuffle off' : 'Shuffle on')).catch(() => {})} />
-        <IconBtn name="prev" size={34} label="Previous" onPress={() => TrackPlayer.skipToPrevious()} />
+        <IconBtn name="prev" size={34} label="Previous" onPress={() => skipPrev().catch(() => {})} />
         <Pressable onPress={() => (playing ? TrackPlayer.pause() : TrackPlayer.play())} accessibilityLabel={playing ? 'Pause' : 'Play'}
           style={({ pressed }) => ({ width: 66, height: 66, borderRadius: 33, backgroundColor: c.fg, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.94 : 1 }] })}>
           <Icon name={playing ? 'pause' : 'play'} size={32} color={c.bg} />
         </Pressable>
-        <IconBtn name="next" size={34} label="Next" onPress={() => TrackPlayer.skipToNext()} />
+        <IconBtn name="next" size={34} label="Next" onPress={() => skipNext().catch(() => {})} />
         <View>
           <IconBtn name="rep" size={24} color={repeat === RepeatMode.Off ? c.mute : c.accent} label="Repeat" onPress={() => cycleRepeat().then(setRepeat)} />
           {repeat === RepeatMode.Track && <Txt v="small" color={c.accent} style={{ position: 'absolute', right: -2, top: -4, fontSize: 10 }}>1</Txt>}

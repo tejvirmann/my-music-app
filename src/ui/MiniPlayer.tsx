@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, View, useWindowDimensions } from 'react-native';
 import { PanGestureHandler, State as GState } from 'react-native-gesture-handler';
-import TrackPlayer, { State, useActiveTrack, usePlaybackState } from 'react-native-track-player';
+import TrackPlayer, { useActiveTrack } from 'react-native-track-player';
 
 import { navigate } from '../navigation/ref';
+import { skipNext, skipPrev, useIsPlaying } from '../player/controls';
 import { usePlayer } from '../player/queue';
 import { useAuth } from '../state/auth';
 import { Art } from './Art';
@@ -16,7 +17,6 @@ export function MiniPlayer() {
   const c = useColors();
   const client = useAuth((a) => a.client);
   const track = useActiveTrack();
-  const { state } = usePlaybackState();
   const queued = usePlayer((s) => s.tracks.filter((t, i) => i > s.index && t.queued).length);
   const { width } = useWindowDimensions();
   const x = useRef(new Animated.Value(0)).current;
@@ -38,12 +38,13 @@ export function MiniPlayer() {
     if (!next && !prev) { Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start(); return; }
     dir.current = next ? -1 : 1;
     Animated.timing(x, { toValue: next ? -width : width, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }).start(() => {
-      (next ? TrackPlayer.skipToNext() : TrackPlayer.skipToPrevious()).catch(() => { dir.current = 0; x.setValue(0); });
+      (next ? skipNext() : skipPrev(true)).catch(() => { dir.current = 0; x.setValue(0); });
     });
   };
+  const playing = useIsPlaying();
   const fade = x.interpolate({ inputRange: [-width, 0, width], outputRange: [0, 1, 0], extrapolate: 'clamp' });
   if (!track || !client) return null;
-  const playing = state === State.Playing;
+
   const albumId = (track as any).albumId ?? track.id;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.line, backgroundColor: c.bg }}>

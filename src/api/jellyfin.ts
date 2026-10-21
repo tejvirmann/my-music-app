@@ -2,6 +2,7 @@ import type { ItemsResponse, JfItem, Session } from './types';
 
 const CLIENT = 'MyMusic';
 const VERSION = '0.1.0';
+const REQUEST_TIMEOUT_MS = 10_000;
 
 function authHeader(deviceId: string, token?: string) {
   const base = `MediaBrowser Client="${CLIENT}", Device="iPhone", DeviceId="${deviceId}", Version="${VERSION}"`;
@@ -36,14 +37,25 @@ export class JellyfinClient {
   constructor(private s: Session) {}
 
   private async req<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${this.s.serverUrl}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader(this.s.deviceId, this.s.token),
-        ...(init.headers ?? {}),
-      },
-    });
+    // A sleeping home lab / reconnecting VPN would otherwise leave this hanging for a minute or more.
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), REQUEST_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(`${this.s.serverUrl}${path}`, {
+        ...init,
+        signal: ctl.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader(this.s.deviceId, this.s.token),
+          ...(init.headers ?? {}),
+        },
+      });
+    } catch {
+      throw new Error('Cannot reach server.');
+    } finally {
+      clearTimeout(timer);
+    }
     if (res.status === 401) throw new Error('SESSION_EXPIRED');
     if (!res.ok) throw new Error(`Jellyfin ${res.status} on ${path}`);
     const text = await res.text();
@@ -125,6 +137,22 @@ export class JellyfinClient {
     };
     const [songs, albums, playlists] = await Promise.all([one('Audio', 30), one('MusicAlbum', 15), one('Playlist', 10)]);
     return { songs: songs.Items, albums: albums.Items, playlists: playlists.Items };
+  }
+
+  /** Artist item by name (Jellyfin keys artists by name). */
+  artist(name: string) {
+    return this.req<JfItem>(`/Artists/${encodeURIComponent(name)}?userId=${this.s.userId}`);
+  }
+
+  albumsByArtist(artistId: string) {
+    const q = new URLSearchParams({ IncludeItemTypes: 'MusicAlbum', Recursive: 'true', ArtistIds: artistId, SortBy: 'ProductionYear,SortName', SortOrder: 'Descending' });
+    return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+  }
+
+  /** Every song by the artist, most played first (then A–Z). */
+  songsByArtist(artistId: string) {
+    const q = new URLSearchParams({ IncludeItemTypes: 'Audio', Recursive: 'true', ArtistIds: artistId, SortBy: 'PlayCount,SortName', SortOrder: 'Descending,Ascending', Fields: 'ProductionYear' });
+    return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
   }
 
   /** Full metadata for one item (song info screen). */
