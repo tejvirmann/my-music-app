@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { View } from 'react-native';
 
 import { LIKED_NAME } from '../likes';
 import { useAuth } from '../state/auth';
 import { DEFAULT_COVER, useCovers } from '../state/covers';
 import { useSettings } from '../state/settings';
-import { unownFor } from '../unown';
-import { Art } from './Art';
+import { Art, UnownTile } from './Art';
 import { Icon } from './Icon';
 import { Txt } from './text';
 import { useColors } from './theme';
@@ -18,17 +16,6 @@ function fingerprint(buf: ArrayBuffer) {
   let h = 2166136261;
   for (let i = 0; i < b.length; i++) h = Math.imul(h ^ b[i], 16777619);
   return `${b.length}:${h >>> 0}`;
-}
-
-/** An Unown for the playlist's first letter on a steady per-playlist colour. */
-function UnownTile({ name, size, box }: { name: string; size?: number; box: object }) {
-  let h = 0;
-  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return (
-    <View style={[box, { backgroundColor: `hsl(${h}, 32%, 38%)`, alignItems: 'center', justifyContent: 'center' }]}>
-      <Image source={unownFor(name)} tintColor="rgba(255,255,255,0.9)" contentFit="contain" style={{ width: size ? size * 0.7 : '70%', height: size ? size * 0.7 : '70%' }} />
-    </View>
-  );
 }
 
 /**

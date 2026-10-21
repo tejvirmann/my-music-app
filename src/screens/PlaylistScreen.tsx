@@ -71,7 +71,7 @@ export function PlaylistScreen({ route, navigation }: any) {
           <View style={{ marginHorizontal: -16 }}>
             {searching && !shown.length && <View style={{ paddingHorizontal: 16 }}><Empty text={`Nothing in this playlist for "${text.trim()}".`} /></View>}
             {shown.map(({ t, i }, n) => (
-              <SongRow key={t.PlaylistItemId ?? `${t.Id}-${i}`} track={t} sub={[t.Artists?.[0] ?? t.AlbumArtist, t.Album].filter(Boolean).join(' · ')}
+              <SongRow unown={name.trim().toLowerCase() === 'unknown'} key={t.PlaylistItemId ?? `${t.Id}-${i}`} track={t} sub={[t.Artists?.[0] ?? t.AlbumArtist, t.Album].filter(Boolean).join(' · ')}
                 ctx={{ playlistId: id, entryId: t.PlaylistItemId, index: i, count: tracks.length, onChange: refresh }}
                 onPress={() => playNow(client, shown.map((x) => x.t), n, name, { kind: 'playlist', id, name })} />
             ))}

@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 
-import { getAppTitle, getGreetingText, getShowDiscover, getShowGreeting, getUnownCovers, setAppTitle, setGreetingText, setShowDiscover, setShowGreeting, setUnownCovers } from '../storage/prefs';
+import { getAppTitle, getGreetingText, getShowDiscover, getShowGreeting, getUnownColor, getUnownCovers, setAppTitle, setGreetingText, setShowDiscover, setShowGreeting, setUnownColor, setUnownCovers } from '../storage/prefs';
 
 interface Settings {
   showDiscover: boolean; setShowDiscover: (v: boolean) => void;
   unownCovers: boolean; setUnownCovers: (v: boolean) => void;
+  unownColor: boolean; setUnownColor: (v: boolean) => void;
   showGreeting: boolean; setShowGreeting: (v: boolean) => void;
   appTitle: string; setAppTitle: (v: string) => void;
   greetingText: string; setGreetingText: (v: string) => void;
@@ -16,6 +17,8 @@ export const useSettings = create<Settings>((set) => ({
   setShowDiscover: (v) => { setShowDiscover(v); set({ showDiscover: v }); },
   unownCovers: getUnownCovers(),
   setUnownCovers: (v) => { setUnownCovers(v); set({ unownCovers: v }); },
+  unownColor: getUnownColor(),
+  setUnownColor: (v) => { setUnownColor(v); set({ unownColor: v }); },
   showGreeting: getShowGreeting(),
   setShowGreeting: (v) => { setShowGreeting(v); set({ showGreeting: v }); },
   appTitle: getAppTitle(),

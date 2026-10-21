@@ -35,6 +35,8 @@ export const getShowDiscover = (): boolean => Storage.getItemSync('showDiscover'
 export const setShowDiscover = (v: boolean) => Storage.setItemSync('showDiscover', v ? '1' : '0');
 export const getUnownCovers = (): boolean => Storage.getItemSync('unownCovers') !== '0';
 export const setUnownCovers = (v: boolean) => Storage.setItemSync('unownCovers', v ? '1' : '0');
+export const getUnownColor = (): boolean => Storage.getItemSync('unownColor') === '1';
+export const setUnownColor = (v: boolean) => Storage.setItemSync('unownColor', v ? '1' : '0');
 
 /** In-app title (home header, login). Empty = the app's configured name. */
 export const getAppTitle = (): string => Storage.getItemSync('appTitle') ?? '';

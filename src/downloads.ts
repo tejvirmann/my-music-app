@@ -49,9 +49,32 @@ export const useDownloadProgress = (playlistId: string): string | undefined => u
 
 const dir = new Directory(Paths.document, 'downloads');
 
+/** Files are saved with their real extension: the native player picks a decoder from it, and an unknown one (.audio) won't play. */
+function extFor(container?: string) {
+  const c = (container ?? '').toLowerCase();
+  if (/m4a|mp4|mov/.test(c)) return 'm4a';
+  if (/flac|ogg|opus|wav|aac|mp3|wma/.test(c)) return c.match(/flac|ogg|opus|wav|aac|mp3|wma/)![0];
+  return c.split(',')[0] || 'mp3';
+}
+
+// Earlier builds saved downloads as ".audio", which never played. Drop them (and any playlist that used one) so they can be downloaded again.
+(() => {
+  const stale = db.getAllSync<{ id: string; path: string }>("SELECT id, path FROM tracks WHERE path LIKE '%.audio'");
+  if (!stale.length) return;
+  for (const t of stale) {
+    try { new File(t.path).delete(); } catch {}
+    db.runSync('DELETE FROM playlist_tracks WHERE playlist_id IN (SELECT playlist_id FROM playlist_tracks WHERE track_id = ?)', t.id);
+    db.runSync('DELETE FROM tracks WHERE id = ?', t.id);
+  }
+  db.runSync('DELETE FROM downloaded_playlists WHERE playlist_id NOT IN (SELECT playlist_id FROM playlist_tracks)');
+})();
+
 export function localPath(trackId: string): string | null {
   const row = db.getFirstSync<{ path: string }>('SELECT path FROM tracks WHERE id = ?', trackId);
-  return row?.path ?? null;
+  if (!row) return null;
+  // iOS moves the app container on updates/reinstalls, so a saved absolute path goes stale: rebuild it from the file name.
+  const f = new File(dir, row.path.split('/').pop()!);
+  return f.exists ? f.uri : null;
 }
 
 export function totalBytes(): number {
@@ -75,7 +98,8 @@ export async function downloadPlaylist(
   try {
     for (const t of tracks) {
       if (!localPath(t.Id)) {
-        const file = await File.downloadFileAsync(client.streamUrl(t.Id), new File(dir, `${t.Id}.audio`), { idempotent: true });
+        const container = (t.MediaSources ?? (await client.item(t.Id).catch(() => undefined))?.MediaSources)?.[0]?.Container;
+        const file = await File.downloadFileAsync(client.streamUrl(t.Id), new File(dir, `${t.Id}.${extFor(container)}`), { idempotent: true });
         db.runSync('INSERT OR REPLACE INTO tracks (id, path, size) VALUES (?, ?, ?)', t.Id, file.uri, file.size ?? 0);
       }
       db.runSync('INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id) VALUES (?, ?)', playlistId, t.Id);

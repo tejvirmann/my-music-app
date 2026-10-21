@@ -88,7 +88,7 @@ export function SettingsScreen({ navigation }: any) {
   const qc = useQueryClient();
   const { id: icon, supported: iconSupported, choose: chooseIcon } = useAppIcon();
   const { mode, setMode } = useThemeMode();
-  const { unownCovers, setUnownCovers, showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
+  const { unownCovers, setUnownCovers, unownColor, setUnownColor, showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
   const hidden = useLibraryPrefs((s) => s.hidden);
   const unhideAll = useLibraryPrefs((s) => s.unhideAll);
   const saved = useLidarrConfig().data;
@@ -152,6 +152,7 @@ export function SettingsScreen({ navigation }: any) {
         <CoverSlot slot={DEFAULT_COVER.art} label="Songs & albums with no art" sub="used everywhere a cover is missing" />
         <CoverSlot slot={DEFAULT_COVER.clips} label="Clips playlist" sub="when the Clips playlist has no art" />
         <Item label="Unown for unknown playlists" sub="the Unown matching the playlist's first letter"><Toggle on={unownCovers} onChange={setUnownCovers} /></Item>
+        <Item label="Unown in colour" sub="on: a colour picked from the name · off: black and white"><Toggle on={unownColor} onChange={setUnownColor} /></Item>
         <CoverSlot slot={DEFAULT_COVER.unknown} label="Unknown playlists" sub="one image for every playlist with no art (wins over Unown)" />
         <Txt v="small" style={{ marginTop: 4 }}>A cover you set on a playlist itself (⋯ → Set cover image) always wins.</Txt>
 

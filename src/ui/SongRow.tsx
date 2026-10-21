@@ -12,8 +12,8 @@ import { toast } from './toast';
 import { useColors } from './theme';
 
 /** A song: tap = play, swipe right = queue, dots / long-press = menu. Green dot = on this phone, accent title = playing. */
-export function SongRow({ track, onPress, sub, hideArt, lead, ctx, chips }: {
-  track: JfItem; onPress: () => void; sub?: string; hideArt?: boolean; lead?: React.ReactNode; ctx?: SongCtx; chips?: string[];
+export function SongRow({ track, onPress, sub, hideArt, lead, ctx, chips, unown }: {
+  track: JfItem; onPress: () => void; sub?: string; hideArt?: boolean; lead?: React.ReactNode; ctx?: SongCtx; chips?: string[]; unown?: boolean;
 }) {
   const c = useColors();
   const client = useAuth((a) => a.client)!;
@@ -22,7 +22,9 @@ export function SongRow({ track, onPress, sub, hideArt, lead, ctx, chips }: {
   return (
     <ListRow
       noArt={hideArt} lead={lead}
-      art={client.imageUrl(track.AlbumId ?? track.Id, 160)}
+      // In the Unknown playlist every song shows its Unown instead of Jellyfin's placeholder (see Art).
+      art={unown ? undefined : client.imageUrl(track.AlbumId ?? track.Id, 160)}
+      unown={unown}
       title={track.Name} sub={sub ?? track.Artists?.[0] ?? track.AlbumArtist} dl={dl} active={active}
       subExtra={chips?.length ? (
         <View style={{ flexDirection: 'row', gap: 4, marginLeft: 8 }}>
