@@ -6,6 +6,7 @@ import { useAuth } from '../state/auth';
 import { useCovers } from '../state/covers';
 import { Art } from './Art';
 import { Icon } from './Icon';
+import { Txt } from './text';
 import { useColors } from './theme';
 
 /** Cheap content fingerprint (FNV-1a) so identical images fetched from different Jellyfin items compare equal. */
@@ -22,8 +23,10 @@ export function PlaylistCover({ id, name, size }: { id: string; name: string; si
   const client = useAuth((a) => a.client)!;
   const custom = useCovers((s) => s.map[id]);
   const liked = name === LIKED_NAME;
-  const { data } = useQuery({ queryKey: ['playlistCover', id], queryFn: () => client.playlistCover(id), enabled: !custom && !liked, staleTime: 30 * 60_000 });
-  const first4 = [...new Set((data?.Items ?? []).slice(0, 4).map((t) => t.AlbumId ?? t.Id))];
+  const { data } = useQuery({ queryKey: ['playlistCover', id, 2], queryFn: () => client.playlistCover(id), enabled: !custom && !liked, staleTime: 30 * 60_000 });
+  // Only tracks that really have a picture: voice clips etc. would otherwise leave blank squares in the collage.
+  const artIds = (data?.Items ?? []).flatMap((t) => (t.AlbumPrimaryImageTag ? [t.AlbumId ?? t.Id] : t.ImageTags?.Primary ? [t.Id] : []));
+  const first4 = [...new Set(artIds.slice(0, 4))];
   // Different album items can carry the very same picture (e.g. a playlist of one series); compare the pixels, not the ids.
   const { data: sameArt } = useQuery({
     queryKey: ['sameArt', id, first4.join(',')],
@@ -44,7 +47,19 @@ export function PlaylistCover({ id, name, size }: { id: string; name: string; si
       </View>
     );
   }
-  const albums = [...new Set((data?.Items ?? []).map((t) => t.AlbumId ?? t.Id))];
+  const albums = [...new Set(artIds)];
+  if (data && !albums.length) {
+    // No track has art: a steady colour per playlist with its initial, instead of an empty grey square.
+    let h = 0;
+    for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
+    return (
+      <View style={[box, { backgroundColor: `hsl(${h}, 32%, 38%)`, alignItems: 'center', justifyContent: 'center' }]}>
+        <Txt v="h1" color="rgba(255,255,255,0.9)" style={size ? { fontSize: size * 0.45, lineHeight: size * 0.5 } : undefined}>
+          {(name.trim()[0] ?? '♪').toUpperCase()}
+        </Txt>
+      </View>
+    );
+  }
   if (albums.length < 2 || sameArt) return <Art uri={albums[0] ? client.imageUrl(albums[0], 320) : undefined} size={size} />;
   const w = size ? Math.max(160, size * 2) : 320;
   const cells = [0, 1, 2, 3].map((i) => albums[i] ?? albums[i % albums.length]);

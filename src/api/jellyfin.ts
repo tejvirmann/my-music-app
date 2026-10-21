@@ -83,10 +83,14 @@ export class JellyfinClient {
     return this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
   }
 
-  /** Cheap "has the library changed?" probe: one row, just the total. */
-  async count(type: 'Audio' | 'MusicAlbum') {
-    const q = new URLSearchParams({ IncludeItemTypes: type, Recursive: 'true', Limit: '1', EnableImages: 'false', EnableUserData: 'false' });
-    return (await this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`)).TotalRecordCount;
+  /** Cheap "has the library changed?" probe: total plus newest item, so a delete + add that keeps the total is still noticed. */
+  async fingerprint(type: 'Audio' | 'MusicAlbum') {
+    const q = new URLSearchParams({
+      IncludeItemTypes: type, Recursive: 'true', Limit: '1', SortBy: 'DateCreated', SortOrder: 'Descending',
+      EnableImages: 'false', EnableUserData: 'false',
+    });
+    const r = await this.req<ItemsResponse>(`/Users/${this.s.userId}/Items?${q}`);
+    return `${r.TotalRecordCount}:${r.Items[0]?.Id ?? ''}`;
   }
 
   albumTracks(albumId: string) {
@@ -202,7 +206,7 @@ export class JellyfinClient {
 
   /** First few entries only: enough to draw a cover without pulling the whole playlist. */
   playlistCover(playlistId: string) {
-    const q = new URLSearchParams({ userId: this.s.userId, limit: '16', enableImages: 'false', enableUserData: 'false' });
+    const q = new URLSearchParams({ userId: this.s.userId, limit: '16', enableUserData: 'false' });
     return this.req<ItemsResponse>(`/Playlists/${playlistId}/Items?${q}`);
   }
 

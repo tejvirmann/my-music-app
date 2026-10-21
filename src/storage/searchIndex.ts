@@ -5,7 +5,7 @@ import type { JfItem } from '../api/types';
 const KEY = 'searchIndex';
 const MAX_AGE_MS = 24 * 60 * 60_000;
 
-export interface SavedIndex { userId: string; at: number; songs: JfItem[]; albums: JfItem[] }
+export interface SavedIndex { userId: string; at: number; songs: JfItem[]; albums: JfItem[]; sig: string }
 
 export async function loadIndex(userId: string): Promise<SavedIndex | undefined> {
   try {

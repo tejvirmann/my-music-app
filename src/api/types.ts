@@ -12,6 +12,7 @@ export interface JfItem {
   AlbumArtist?: string;
   Album?: string;
   AlbumId?: string;
+  AlbumPrimaryImageTag?: string;
   Artists?: string[];
   RunTimeTicks?: number;
   IndexNumber?: number;

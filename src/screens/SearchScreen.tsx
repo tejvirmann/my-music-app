@@ -24,20 +24,21 @@ const tokens = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean);
 function useIndex() {
   const client = useAuth((a) => a.client)!;
   const userId = useAuth((a) => a.session!.userId);
-  // Saved copy is reused when the server's song/album totals still match (two 1-row probes) and it is under a day old.
+  // Saved copy is reused when the server's song/album totals and newest items still match (two 1-row probes) and it is under a day old.
   const index = useQuery({
     queryKey: ['searchIndex', userId], staleTime: 30 * 60_000, gcTime: Infinity,
     queryFn: async () => {
+      const sigNow = async () => (await Promise.all([client.fingerprint('Audio'), client.fingerprint('MusicAlbum')])).join('|');
       const saved = await loadIndex(userId);
       if (saved && isFresh(saved)) {
         try {
-          const [ns, na] = await Promise.all([client.count('Audio'), client.count('MusicAlbum')]);
-          if (ns === saved.songs.length && na === saved.albums.length) return saved;
+          if ((await sigNow()) === saved.sig) return saved;
         } catch { return saved; }
       }
-      let songs: JfItem[], albums: JfItem[];
+      let songs: JfItem[], albums: JfItem[], sig: string;
+      try { sig = await sigNow(); } catch { sig = ''; }
       try { [songs, albums] = await Promise.all([client.allSongs(), client.allAlbums()]); } catch (e) { if (saved) return saved; throw e; }
-      const fresh = { userId, at: Date.now(), songs, albums };
+      const fresh = { userId, at: Date.now(), songs, albums, sig };
       saveIndex(fresh);
       return fresh;
     },
