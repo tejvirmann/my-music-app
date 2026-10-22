@@ -4,7 +4,7 @@ import { Pressable, TextInput, View } from 'react-native';
 
 import { toggleDownload } from '../downloadActions';
 import { orLocal, useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
-import { playNow } from '../player/queue';
+import { playNow, playShuffled, usePlayer } from '../player/queue';
 import { norm, prep, searchItems } from '../search';
 import { useAuth } from '../state/auth';
 import { PlaylistCover } from '../ui/PlaylistCover';
@@ -33,7 +33,7 @@ export function PlaylistScreen({ route, navigation }: any) {
   const rows = useMemo(() => tracks.map((t, i) => ({ item: { t, i }, p: prep({ title: t.Name, artist: (t.Artists ?? [t.AlbumArtist ?? '']).join(' '), album: t.Album }) })), [tracks]);
   const searching = norm(text).length > 0;
   const shown = useMemo(() => (searching ? searchItems(rows, text, { title: 2, artist: 1.5, album: 1 }).map((x) => x.item) : tracks.map((t, i) => ({ t, i }))), [rows, text, searching, tracks]);
-  const shuffled = () => [...tracks].sort(() => Math.random() - 0.5);
+  const shuffling = usePlayer((s) => s.shuffle && s.ctx?.id === id);
 
   return (
     <Screen mini>
@@ -50,7 +50,7 @@ export function PlaylistScreen({ route, navigation }: any) {
           <Pressable disabled={!!progress} onPress={() => toggleDownload(client, 'playlist', id, name, isDl && !stale)} hitSlop={8} accessibilityLabel="Download playlist">
             {progress ? <Txt color={c.ok}>{progress}</Txt> : <Icon name="dl" size={24} color={isDl ? (stale ? c.accent : c.ok) : c.mute} />}
           </Pressable>
-          <IconBtn name="shuf" size={24} color={c.mute} label="Shuffle play" onPress={() => tracks.length && playNow(client, shuffled(), 0, name, { kind: 'playlist', id, name })} />
+          <IconBtn name="shuf" size={24} color={shuffling ? c.accent : c.mute} label="Shuffle play" onPress={() => playShuffled(client, tracks, name, { kind: 'playlist', id, name })} />
           <IconBtn name="dots" size={24} color={c.mute} label="More" onPress={() => openPlaylistMenu({ Id: id, Name: name, Type: 'Playlist', ChildCount: tracks.length })} />
           <View style={{ flex: 1 }} />
           <Pressable onPress={() => tracks.length && playNow(client, tracks, 0, name, { kind: 'playlist', id, name })} accessibilityLabel="Play playlist"

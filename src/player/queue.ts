@@ -12,15 +12,15 @@ import { recordSource } from './recents';
 export type QTrack = Track & { queued?: boolean; albumId?: string };
 
 /** Mirror of the native queue so screens can render it. Refreshed after every mutation and on track change. */
-export const usePlayer = create<{ tracks: QTrack[]; index: number; ctxName: string; ctx: PlaySource | null; shuffle: boolean }>(() => ({
-  tracks: [], index: -1, ctxName: '', ctx: null, shuffle: false,
+export const usePlayer = create<{ tracks: QTrack[]; index: number; ctxName: string; ctx: PlaySource | null; shuffle: boolean; repeat: RepeatMode }>(() => ({
+  tracks: [], index: -1, ctxName: '', ctx: null, shuffle: false, repeat: RepeatMode.Off,
 }));
 /** Upcoming context tracks in their pre-shuffle order, so turning shuffle off can restore it. */
 let originalOrder: string[] = [];
 
 export async function syncQueue() {
-  const [tracks, index] = await Promise.all([TrackPlayer.getQueue(), TrackPlayer.getActiveTrackIndex()]);
-  usePlayer.setState({ tracks: tracks as QTrack[], index: index ?? -1 });
+  const [tracks, index, repeat] = await Promise.all([TrackPlayer.getQueue(), TrackPlayer.getActiveTrackIndex(), TrackPlayer.getRepeatMode()]);
+  usePlayer.setState({ tracks: tracks as QTrack[], index: index ?? -1, repeat });
 }
 
 /** Mount once. */
@@ -66,6 +66,16 @@ export async function playNow(client: JellyfinClient, items: JfItem[], index = 0
   usePlayer.setState({ ctxName: name, ctx: source ?? null, shuffle: false });
   await TrackPlayer.play();
   await syncQueue();
+}
+
+/** Shuffle button on a playlist / artist: plays in random order and turns the shuffle indicator on, so it is already lit in Now Playing. */
+export async function playShuffled(client: JellyfinClient, items: JfItem[], name = '', source?: PlaySource) {
+  if (!items.length) return;
+  const order = [...items].sort(() => Math.random() - 0.5);
+  await playNow(client, order, 0, name, source);
+  // Turning shuffle off later puts the rest back in the list's own order.
+  originalOrder = items.filter((i) => i.Id !== order[0].Id).map((i) => i.Id);
+  usePlayer.setState({ shuffle: true });
 }
 
 /** Where hand-queued songs go: right after the current track and any songs already queued by hand. */
@@ -127,5 +137,6 @@ export async function cycleRepeat(): Promise<RepeatMode> {
   const cur = await TrackPlayer.getRepeatMode();
   const next = cur === RepeatMode.Off ? RepeatMode.Queue : cur === RepeatMode.Queue ? RepeatMode.Track : RepeatMode.Off;
   await TrackPlayer.setRepeatMode(next);
+  usePlayer.setState({ repeat: next });
   return next;
 }

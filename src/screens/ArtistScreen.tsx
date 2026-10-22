@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { View, useWindowDimensions } from 'react-native';
 
-import { playNow } from '../player/queue';
+import { playNow, playShuffled, usePlayer } from '../player/queue';
 import { useAuth } from '../state/auth';
 import { Art } from '../ui/Art';
 import { Icon } from '../ui/Icon';
@@ -28,12 +28,12 @@ export function ArtistScreen({ route, navigation }: any) {
   const all = songs.data?.Items ?? [];
   const albumList = albums.data?.Items ?? [];
   const hasHistory = all.some((t) => (t.UserData?.PlayCount ?? 0) > 0);
+  const shuffling = usePlayer((s) => s.shuffle && s.ctxName === name);
   const popular = hasHistory ? all.slice(0, POPULAR) : [];
   const hero = artist.data?.ImageTags?.Primary ? client.imageUrl(artist.data.Id, 640) : albumList[0] ? client.imageUrl(albumList[0].Id, 640) : undefined;
   const play = (shuffle: boolean) => {
     if (!all.length) return;
-    const list = shuffle ? [...all].sort(() => Math.random() - 0.5) : all;
-    playNow(client, list, 0, name);
+    if (shuffle) playShuffled(client, all, name); else playNow(client, all, 0, name);
   };
 
   return (
@@ -50,7 +50,7 @@ export function ArtistScreen({ route, navigation }: any) {
               {[albumList.length ? `${albumList.length} album${albumList.length === 1 ? '' : 's'}` : null, all.length ? `${all.length} song${all.length === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ')}
             </Txt>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, marginTop: 14 }}>
-              <IconBtn name="shuf" size={26} color={c.mute} label="Shuffle artist" onPress={() => play(true)} />
+              <IconBtn name="shuf" size={26} color={shuffling ? c.accent : c.mute} label="Shuffle artist" onPress={() => play(true)} />
               <Pressable onPress={() => play(false)} accessibilityLabel="Play artist"
                 style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: c.fg, alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name="play" size={28} color={c.bg} />

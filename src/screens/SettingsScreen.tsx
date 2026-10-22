@@ -156,11 +156,11 @@ export function SettingsScreen({ navigation }: any) {
         </Item>
 
         <Group title="Default covers" />
-        <CoverSlot slot={DEFAULT_COVER.art} label="Songs & albums with no art" sub="used everywhere a cover is missing" />
-        <CoverSlot slot={DEFAULT_COVER.clips} label="Clips playlist" sub="when the Clips playlist has no art" />
+        <CoverSlot slot={DEFAULT_COVER.art} label="Missing song / album cover" sub="one song or album that has no picture" />
+        <CoverSlot slot={DEFAULT_COVER.clips} label="Clips playlist cover" sub="the Clips playlist, when no song has a picture" />
         <Item label="Unown for unknown playlists" sub="the Unown matching the playlist's first letter"><Toggle on={unownCovers} onChange={setUnownCovers} /></Item>
         <Item label="Unown in colour" sub="on: a colour picked from the name · off: black and white"><Toggle on={unownColor} onChange={setUnownColor} /></Item>
-        <CoverSlot slot={DEFAULT_COVER.unknown} label="Unknown playlists" sub="one image for every playlist with no art (wins over Unown)" />
+        <CoverSlot slot={DEFAULT_COVER.unknown} label="Missing playlist cover" sub="a playlist where no song has a picture (wins over Unown)" />
         <Txt v="small" style={{ marginTop: 4 }}>A cover you set on a playlist itself (⋯ → Set cover image) always wins.</Txt>
 
         <Group title="Library" />

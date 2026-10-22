@@ -14,6 +14,7 @@ import { Art } from '../ui/Art';
 import { Icon } from '../ui/Icon';
 import { IconBtn, fmt } from '../ui/layout';
 import { openSongMenu } from '../ui/sheets';
+import { ToggleBtn } from '../ui/ToggleBtn';
 import { Txt } from '../ui/text';
 import { F, useColors } from '../ui/theme';
 import { toast } from '../ui/toast';
@@ -135,13 +136,11 @@ export function NowPlayingScreen({ navigation }: any) {
   const qc = useQueryClient();
   const track = useActiveTrack();
   const { position, duration } = useProgress(250);
-  const { ctxName, ctx, shuffle, tracks, index } = usePlayer();
-  const [repeat, setRepeat] = useState(RepeatMode.Off);
+  const { ctxName, ctx, shuffle, tracks, index, repeat } = usePlayer();
   const liked = useLiked().data?.entries ?? {};
   const playing = useIsPlaying();
   const id = track ? String(track.id) : '';
   const info = useQuery({ queryKey: ['song', id], queryFn: () => client.item(id), enabled: !!id, staleTime: 10 * 60_000 });
-  useEffect(() => { TrackPlayer.getRepeatMode().then(setRepeat).catch(() => {}); }, []);
   const queued = tracks.filter((t, i) => i > index && t.queued).length;
 
   if (!track) {
@@ -193,17 +192,14 @@ export function NowPlayingScreen({ navigation }: any) {
       <Scrubber position={position} duration={duration} />
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8 }}>
-        <IconBtn name="shuf" size={24} color={shuffle ? c.accent : c.mute} label="Shuffle upcoming" onPress={() => setShuffle(!shuffle).then(() => toast(shuffle ? 'Shuffle off' : 'Shuffle on')).catch(() => {})} />
+        <ToggleBtn name="shuf" on={shuffle} label={shuffle ? 'Shuffle on' : 'Shuffle off'} onPress={() => setShuffle(!shuffle).catch(() => {})} />
         <IconBtn name="prev" size={34} label="Previous" onPress={() => skipPrev().catch(() => {})} />
         <Pressable onPress={() => (playing ? TrackPlayer.pause() : TrackPlayer.play())} accessibilityLabel={playing ? 'Pause' : 'Play'}
           style={({ pressed }) => ({ width: 66, height: 66, borderRadius: 33, backgroundColor: c.fg, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.94 : 1 }] })}>
           <Icon name={playing ? 'pause' : 'play'} size={32} color={c.bg} />
         </Pressable>
         <IconBtn name="next" size={34} label="Next" onPress={() => skipNext().catch(() => {})} />
-        <View>
-          <IconBtn name="rep" size={24} color={repeat === RepeatMode.Off ? c.mute : c.accent} label="Repeat" onPress={() => cycleRepeat().then(setRepeat)} />
-          {repeat === RepeatMode.Track && <Txt v="small" color={c.accent} style={{ position: 'absolute', right: -2, top: -4, fontSize: 10 }}>1</Txt>}
-        </View>
+        <ToggleBtn name="rep" on={repeat !== RepeatMode.Off} badge={repeat === RepeatMode.Track ? '1' : undefined} label={repeat === RepeatMode.Track ? 'Repeat one' : repeat === RepeatMode.Queue ? 'Repeat all' : 'Repeat off'} onPress={() => cycleRepeat().catch(() => {})} />
       </View>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginTop: 'auto', paddingTop: 12 }}>
