@@ -23,7 +23,10 @@ export function UnownTile({ name, size, box }: { name: string; size?: number; bo
 /** Square cover. Disk-cached; when there is no image (or it fails to load) it shows the default image from Settings, else a quiet placeholder. With `name` (and the Unown setting on) a missing image becomes that name's Unown. */
 export function Art({ uri, size, style, name }: { uri?: string; size?: number; style?: StyleProp<ViewStyle>; name?: string }) {
   const c = useColors();
-  const [failed, setFailed] = useState(false);
+  // Remember which address failed, not just that something failed: this component is reused as the song changes, and a flag left over from
+  // a song with no art used to hide the next song's art.
+  const [failedUri, setFailedUri] = useState<string>();
+  const failed = !!uri && failedUri === uri;
   const unownOn = useSettings((x) => x.unownCovers);
   const fallback = useCovers((m) => m.map[DEFAULT_COVER.art]);
   const box: ViewStyle = size ? { width: size, height: size } : { width: '100%', aspectRatio: 1 };
@@ -33,8 +36,8 @@ export function Art({ uri, size, style, name }: { uri?: string; size?: number; s
       {(!uri || failed) && !!fallback && <Image source={{ uri: fallback }} style={{ position: 'absolute', width: '100%', height: '100%' }} cachePolicy="disk" contentFit="cover" />}
       {(!uri || failed) && !fallback && <Icon name="queue" size={size ? Math.max(14, size * 0.35) : 28} color={c.line} />}
       {!!uri && !failed && (
-        <Image source={{ uri }} style={{ position: 'absolute', width: '100%', height: '100%' }} cachePolicy="disk" recyclingKey={uri}
-          transition={150} contentFit="cover" onError={() => setFailed(true)} />
+        <Image key={uri} source={{ uri }} style={{ position: 'absolute', width: '100%', height: '100%' }} cachePolicy="disk" recyclingKey={uri}
+          transition={150} contentFit="cover" onError={() => setFailedUri(uri)} />
       )}
     </View>
   );
