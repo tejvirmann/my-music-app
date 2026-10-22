@@ -87,7 +87,7 @@ export function totalBytes(): number {
 
 export type DlInfo = { kind: 'playlist' | 'album' | 'song'; name: string };
 
-/** Sequential on purpose: gentle on the home server. Progress reads "3/13 · 45%" (songs done, and how far the current one is). */
+/** Sequential on purpose: gentle on the home server. Progress reads "17%": how far through the whole playlist, counting the song in flight. */
 export async function downloadPlaylist(
   client: JellyfinClient,
   playlistId: string,
@@ -102,7 +102,8 @@ export async function downloadPlaylist(
   Image.prefetch(artIds.flatMap((id) => [160, 320, 640].map((w) => client.imageUrl(id, w))), 'disk').catch(() => {});
   let done = 0;
   const total = tracks.length;
-  setProgress(playlistId, `0/${total}`);
+  const show = (fraction: number) => setProgress(playlistId, `${Math.min(99, Math.floor(((done + fraction) / total) * 100))}%`);
+  show(0);
   try {
     for (const [pos, t] of tracks.entries()) {
       if (!localPath(t.Id)) {
@@ -112,8 +113,8 @@ export async function downloadPlaylist(
           idempotent: true,
           onProgress: ({ bytesWritten, totalBytes }) => {
             if (totalBytes <= 0) return;
-            const pct = Math.min(99, Math.floor((bytesWritten / totalBytes) * 20) * 5);
-            if (pct !== last) { last = pct; setProgress(playlistId, `${done}/${total} · ${pct}%`); }
+            const step = Math.floor((bytesWritten / totalBytes) * 20); // refresh at most 20 times per song
+            if (step !== last) { last = step; show(bytesWritten / totalBytes); }
           },
         });
         db.runSync('INSERT OR REPLACE INTO tracks (id, path, size) VALUES (?, ?, ?)', t.Id, file.uri, file.size ?? 0);
@@ -122,7 +123,7 @@ export async function downloadPlaylist(
       db.runSync('UPDATE tracks SET meta = ? WHERE id = ?', JSON.stringify(slim), t.Id);
       db.runSync('INSERT OR REPLACE INTO playlist_tracks (playlist_id, track_id, pos) VALUES (?, ?, ?)', playlistId, t.Id, pos);
       onProgress?.(++done, total);
-      setProgress(playlistId, `${done}/${total}`);
+      show(0);
     }
     db.runSync('INSERT OR IGNORE INTO downloaded_playlists (playlist_id) VALUES (?)', playlistId);
     if (info) {
