@@ -3,7 +3,7 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 import { playNow } from '../player/queue';
 import { useRecentSources, useRecents } from '../player/recents';
-import { useDownloadedTracks, useLocalAlbums } from '../downloads';
+import { useDownloadedPlaylists, useDownloadedTracks, useLocalAlbums } from '../downloads';
 import { useAuth } from '../state/auth';
 import { useOffline } from '../state/offline';
 import { useSettings } from '../state/settings';
@@ -39,7 +39,8 @@ export function HomeScreen({ navigation }: any) {
   const pl = usePlaylists();
   const albums = useQuery({ queryKey: ['recentAlbums'], queryFn: () => client.recentAlbums(20), enabled: !offline });
   const added = useQuery({ queryKey: ['recentSongs'], queryFn: () => client.recentSongs(10), enabled: !offline });
-  const albumItems = offline ? localAlbums : albums.data?.Items ?? [];
+  const dlKeys = useDownloadedPlaylists();
+  const albumItems = offline ? [...localAlbums, ...(albums.data?.Items ?? []).filter((a) => dlKeys.has(`album:${a.Id}`) && !localAlbums.some((l) => l.Id === a.Id))] : albums.data?.Items ?? [];
   const refreshing = albums.isRefetching || added.isRefetching || pl.isRefetching;
   const refresh = () => { albums.refetch(); added.refetch(); pl.refetch(); };
 

@@ -57,7 +57,10 @@ export function LibraryScreen({ navigation }: any) {
 
   const isPl = tab === 'pl';
   const playlists = pl.items.filter((p) => !dlOnly || downloaded.has(p.Id));
-  const alb = (offline ? localAlbums : albums.data?.pages.flatMap((p) => p.Items) ?? []).filter((a) => !dlOnly || downloaded.has(dlKey('album', a.Id)));
+  const loaded = albums.data?.pages.flatMap((p) => p.Items) ?? [];
+  // Offline: saved details first, then (for downloads from before offline support) albums remembered from the last online visit.
+  const offlineAlbums = [...localAlbums, ...loaded.filter((a) => downloaded.has(dlKey('album', a.Id)) && !localAlbums.some((l) => l.Id === a.Id))];
+  const alb = (offline ? offlineAlbums : loaded).filter((a) => !dlOnly || downloaded.has(dlKey('album', a.Id)));
   const loading = !offline && (isPl ? pl.isLoading : albums.isLoading);
   const header = (
     <View>

@@ -4,6 +4,10 @@ const CLIENT = 'MyMusic';
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
 
+/** Told whenever a real request gets an answer, so the app can notice the server is back without waiting for its own check. */
+let onReach: ((ok: boolean) => void) | undefined;
+export const watchReach = (f: (ok: boolean) => void) => { onReach = f; };
+
 function authHeader(deviceId: string, token?: string) {
   const base = `MediaBrowser Client="${CLIENT}", Device="iPhone", DeviceId="${deviceId}", Version="${VERSION}"`;
   return token ? `${base}, Token="${token}"` : base;
@@ -56,10 +60,21 @@ export class JellyfinClient {
     } finally {
       clearTimeout(timer);
     }
+    onReach?.(true);
     if (res.status === 401) throw new Error('SESSION_EXPIRED');
     if (!res.ok) throw new Error(`Jellyfin ${res.status} on ${path}`);
     const text = await res.text();
     return (text ? JSON.parse(text) : undefined) as T;
+  }
+
+  /** Can the server be reached at all? Any HTTP answer counts, even an error: it means the network and the server are up. */
+  async ping() {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 8000);
+    try {
+      await fetch(`${this.s.serverUrl}/Users/Me`, { signal: ctl.signal, headers: { 'Authorization': authHeader(this.s.deviceId, this.s.token) } });
+      return true;
+    } catch { return false; } finally { clearTimeout(timer); }
   }
 
   /** Widths snap to 3 buckets so each image is fetched (and cached) once per size, not once per call site. */

@@ -10,6 +10,7 @@ import { useAppIcon } from '../state/icon';
 import { totalBytes } from '../downloads';
 import { clearQueue } from '../player/queue';
 import { useAuth } from '../state/auth';
+import { setConnMode, useOffline } from '../state/offline';
 import { DEFAULT_COVER, clearCover, pickCover, useCovers } from '../state/covers';
 import { useLibraryPrefs } from '../state/library';
 import { useSettings } from '../state/settings';
@@ -89,6 +90,7 @@ export function SettingsScreen({ navigation }: any) {
   const { id: icon, supported: iconSupported, choose: chooseIcon } = useAppIcon();
   const { mode, setMode } = useThemeMode();
   const { unownCovers, setUnownCovers, unownColor, setUnownColor, showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
+  const { mode: connMode, offline } = useOffline();
   const hidden = useLibraryPrefs((s) => s.hidden);
   const unhideAll = useLibraryPrefs((s) => s.unhideAll);
   const saved = useLidarrConfig().data;
@@ -147,6 +149,11 @@ export function SettingsScreen({ navigation }: any) {
             <Txt v="small" style={{ marginTop: 4 }}>Leave empty to follow the time of day.</Txt>
           </View>
         )}
+
+        <Group title="Connection" />
+        <Item label="Mode" sub={connMode === 'auto' ? `automatic · currently ${offline ? 'offline' : 'online'}` : connMode === 'offline' ? 'downloads only, nothing is fetched' : 'always talk to the server'}>
+          <Seg value={connMode} options={['auto', 'online', 'offline']} onChange={setConnMode} />
+        </Item>
 
         <Group title="Default covers" />
         <CoverSlot slot={DEFAULT_COVER.art} label="Songs & albums with no art" sub="used everywhere a cover is missing" />

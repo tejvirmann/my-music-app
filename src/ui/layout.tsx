@@ -14,11 +14,12 @@ export function Screen({ children, mini, style }: { children: React.ReactNode; m
   const c = useColors();
   const inset = useSafeAreaInsets();
   const offline = useOffline((s) => s.offline);
+  const forced = useOffline((s) => s.mode === 'offline');
   return (
     <View style={[{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top }, style]}>
       {offline && (
         <Pressable onPress={checkConnection} style={{ backgroundColor: c.card, paddingVertical: 6, paddingHorizontal: 16 }}>
-          <Txt v="small">Offline · showing downloads only · tap to retry</Txt>
+          <Txt v="small">{forced ? 'Offline mode · showing downloads only · change in Settings' : 'Offline · showing downloads only · tap to retry'}</Txt>
         </Pressable>
       )}
       {children}

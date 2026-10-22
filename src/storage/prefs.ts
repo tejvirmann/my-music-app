@@ -33,6 +33,9 @@ export function setPendingLikes(v: PendingLike[]) {
 
 export const getShowDiscover = (): boolean => Storage.getItemSync('showDiscover') !== '0';
 export const setShowDiscover = (v: boolean) => Storage.setItemSync('showDiscover', v ? '1' : '0');
+export type ConnMode = 'auto' | 'online' | 'offline';
+export const getConnMode = (): ConnMode => (Storage.getItemSync('connMode') as ConnMode | null) ?? 'auto';
+export const setConnModePref = (v: ConnMode) => Storage.setItemSync('connMode', v);
 export const getUnownCovers = (): boolean => Storage.getItemSync('unownCovers') !== '0';
 export const setUnownCovers = (v: boolean) => Storage.setItemSync('unownCovers', v ? '1' : '0');
 export const getUnownColor = (): boolean => Storage.getItemSync('unownColor') === '1';
