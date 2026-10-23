@@ -87,6 +87,10 @@ export function totalBytes(): number {
 
 export type DlInfo = { kind: 'playlist' | 'album' | 'song'; name: string };
 
+const running = new Map<string, AbortController>();
+/** Stop a download in flight. Songs already saved stay unless the playlist was never fully downloaded. */
+export const cancelDownload = (playlistId: string) => running.get(playlistId)?.abort();
+
 /** Sequential on purpose: gentle on the home server. Progress reads "17%": how far through the whole playlist, counting the song in flight. */
 export async function downloadPlaylist(
   client: JellyfinClient,
@@ -100,19 +104,31 @@ export async function downloadPlaylist(
   // Warm the on-disk image cache so artwork also shows offline.
   const artIds = [...new Set(tracks.map((t) => t.AlbumId ?? t.Id))];
   Image.prefetch(artIds.flatMap((id) => [160, 320, 640].map((w) => client.imageUrl(id, w))), 'disk').catch(() => {});
+  const ctl = new AbortController();
+  running.set(playlistId, ctl);
+  const wasDownloaded = !!db.getFirstSync('SELECT 1 FROM downloaded_playlists WHERE playlist_id = ?', playlistId);
   let done = 0;
+  let cur = -1; // index of the song in flight
   const total = tracks.length;
-  const show = (fraction: number) => setProgress(playlistId, `${Math.min(99, Math.floor(((done + fraction) / total) * 100))}%`);
+  let shown = 0; // never goes backwards, even if a late progress event from the previous song arrives
+  const show = (fraction: number) => {
+    shown = Math.max(shown, Math.min(99, Math.floor(((done + fraction) / total) * 100)));
+    setProgress(playlistId, `${done}/${total} · ${shown}%`);
+  };
   show(0);
   try {
     for (const [pos, t] of tracks.entries()) {
+      if (ctl.signal.aborted) throw new Error('cancelled');
+      cur = pos;
       if (!localPath(t.Id)) {
         const container = (t.MediaSources ?? (await client.item(t.Id).catch(() => undefined))?.MediaSources)?.[0]?.Container;
         let last = -1;
         const file = await File.downloadFileAsync(client.streamUrl(t.Id), new File(dir, `${t.Id}.${extFor(container)}`), {
           idempotent: true,
+          signal: ctl.signal,
           onProgress: ({ bytesWritten, totalBytes }) => {
-            if (totalBytes <= 0) return;
+            if (cur !== pos) return;
+            if (!(totalBytes > 0) || bytesWritten > totalBytes) return;
             const step = Math.floor((bytesWritten / totalBytes) * 20); // refresh at most 20 times per song
             if (step !== last) { last = step; show(bytesWritten / totalBytes); }
           },
@@ -131,7 +147,12 @@ export async function downloadPlaylist(
       db.runSync('INSERT OR REPLACE INTO dl_meta (key, kind, name, artist, year, count, ordered) VALUES (?, ?, ?, ?, ?, ?, 1)',
         playlistId, info.kind, info.name, first?.AlbumArtist ?? first?.Artists?.[0] ?? null, first?.ProductionYear ?? null, total);
     }
+  } catch (e) {
+    if (!ctl.signal.aborted) throw e;
+    if (!wasDownloaded) removePlaylistDownload(playlistId);
+    return 'cancelled' as const;
   } finally {
+    running.delete(playlistId);
     setProgress(playlistId, undefined);
   }
 }

@@ -19,6 +19,7 @@ export interface JfItem {
   ChildCount?: number;
   PlaylistItemId?: string; // only on playlist entries; needed for remove/move
   ImageTags?: { Primary?: string };
+  ImageBlurHashes?: { Primary?: Record<string, string> };
   UserData?: { PlayCount?: number };
   // Detail fields (only present when requested via Fields=...)
   Genres?: string[];

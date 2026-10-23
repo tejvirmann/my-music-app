@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Pressable, View } from 'react-native';
 
-import { dlKey, toggleDownload } from '../downloadActions';
+import { confirmCancel, dlKey, toggleDownload } from '../downloadActions';
 import { orLocal, useDownloadedPlaylists, useDownloadProgress } from '../downloads';
 import { setLiked, useLiked } from '../likes';
 import { playNow } from '../player/queue';
@@ -40,8 +40,8 @@ export function AlbumScreen({ route, navigation }: any) {
         {!!first?.AlbumArtist && <Txt color={c.accent} style={{ marginTop: 4 }} onPress={() => navigation.navigate('Artist', { name: first.AlbumArtist })}>{first.AlbumArtist}</Txt>}
         <Txt v="mute" style={{ marginTop: 4 }}>{meta.split(' · ').slice(first?.AlbumArtist ? 1 : 0).join(' · ')}</Txt>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 14, marginBottom: 6 }}>
-          <Pressable disabled={!!progress} onPress={() => toggleDownload(client, 'album', id, name, isDl)} hitSlop={8} accessibilityLabel="Download album">
-            {progress ? <Txt color={c.ok}>{progress}</Txt> : <Icon name="dl" size={24} color={isDl ? c.ok : c.mute} />}
+          <Pressable onPress={() => progress ? confirmCancel(key) : toggleDownload(client, 'album', id, name, isDl)} hitSlop={8} accessibilityLabel={progress ? 'Cancel download' : 'Download album'}>
+            {progress ? <Txt color={c.ok}>{progress} ✕</Txt> : <Icon name="dl" size={24} color={isDl ? c.ok : c.mute} />}
           </Pressable>
           <IconBtn name={allLiked ? 'heart' : 'heartO'} size={24} color={allLiked ? c.accent : c.mute} label="Like all songs"
             onPress={() => setLiked(client, qc, tracks.map((t) => t.Id), !allLiked).then(() => toast(allLiked ? 'Removed from Liked' : 'Album added to Liked')).catch((e) => Alert.alert('Failed', e.message))} />

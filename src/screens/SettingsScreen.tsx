@@ -89,7 +89,7 @@ export function SettingsScreen({ navigation }: any) {
   const qc = useQueryClient();
   const { id: icon, supported: iconSupported, choose: chooseIcon } = useAppIcon();
   const { mode, setMode } = useThemeMode();
-  const { unownCovers, setUnownCovers, unownColor, setUnownColor, showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
+  const { unownCovers, setUnownCovers, unownColor, setUnownColor, artTint, setArtTint, showDiscover, setShowDiscover, showGreeting, setShowGreeting, greetingText, setGreetingText, appTitle, setAppTitle } = useSettings();
   const { mode: connMode, offline } = useOffline();
   const hidden = useLibraryPrefs((s) => s.hidden);
   const unhideAll = useLibraryPrefs((s) => s.unhideAll);
@@ -162,6 +162,9 @@ export function SettingsScreen({ navigation }: any) {
         <Item label="Unown in colour" sub="on: a colour picked from the name · off: black and white"><Toggle on={unownColor} onChange={setUnownColor} /></Item>
         <CoverSlot slot={DEFAULT_COVER.unknown} label="Missing playlist cover" sub="a playlist where no song has a picture (wins over Unown)" />
         <Txt v="small" style={{ marginTop: 4 }}>A cover you set on a playlist itself (⋯ → Set cover image) always wins.</Txt>
+
+        <Group title="Now playing" />
+        <Item label="Colour from album art" sub="the player's background takes a soft tint from the cover"><Toggle on={artTint} onChange={setArtTint} /></Item>
 
         <Group title="Library" />
         <Item label="Server" sub={host} value="change ›" onPress={out} />

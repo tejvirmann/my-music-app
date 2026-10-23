@@ -11,7 +11,7 @@ import { useLibraryPrefs } from '../state/library';
 import { useOffline } from '../state/offline';
 import { PlaylistCover } from '../ui/PlaylistCover';
 import { Art } from '../ui/Art';
-import { Empty, Heading, IconBtn, Pill, Screen, TopBar } from '../ui/layout';
+import { Empty, IconBtn, Pill, Screen, TopBar } from '../ui/layout';
 import { DlDot, ListRow } from '../ui/rows';
 import { openAlbumMenu, openPlaylistMenu } from '../ui/sheets';
 import { Txt } from '../ui/text';
@@ -64,7 +64,6 @@ export function LibraryScreen({ navigation }: any) {
   const loading = !offline && (isPl ? pl.isLoading : albums.isLoading);
   const header = (
     <View>
-      <Heading title="Your library" />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
         <Pill label="playlists" on={isPl} onPress={() => setTab('pl')} />
         <Pill label="albums" on={!isPl} onPress={() => setTab('alb')} />

@@ -3,8 +3,8 @@ import { Alert, Pressable, View } from 'react-native';
 import { create } from 'zustand';
 
 import type { JfItem } from '../api/types';
-import { dlKey, toggleDownload } from '../downloadActions';
-import { useDownloadedPlaylists } from '../downloads';
+import { confirmCancel, dlKey, toggleDownload } from '../downloadActions';
+import { useDownloadProgress, useDownloadedPlaylists } from '../downloads';
 import { setLiked, useLiked } from '../likes';
 import { navigate } from '../navigation/ref';
 import { addToQueue, playNext } from '../player/queue';
@@ -125,13 +125,15 @@ function PlaylistSheet({ item }: { item: JfItem }) {
   const client = useAuth((a) => a.client)!;
   const { pinned, hidden, togglePin, toggleHide } = useLibraryPrefs();
   const dl = useDownloadedPlaylists().has(item.Id);
+  const busy = !!useDownloadProgress(item.Id);
   const custom = useCovers((s) => s.map[item.Id]);
   const all = async () => (await client.playlistTracks(item.Id)).Items;
   return (
     <>
       <SheetHeader cover={<PlaylistCover id={item.Id} name={item.Name} size={44} />} title={item.Name} sub={`Playlist · ${item.ChildCount ?? 0} songs`} />
       <SheetItem icon="pin" label={pinned.includes(item.Id) ? 'Unpin' : 'Pin to top'} onPress={run(() => { togglePin(item.Id); toast(pinned.includes(item.Id) ? 'Unpinned' : 'Pinned to top'); })} />
-      <SheetItem icon="dl" label={dl ? 'Remove download' : 'Download playlist'} onPress={run(() => toggleDownload(client, 'playlist', item.Id, item.Name, dl))} />
+      {busy ? <SheetItem icon="x" label="Cancel download" onPress={run(() => confirmCancel(item.Id))} />
+        : <SheetItem icon="dl" label={dl ? 'Remove download' : 'Download playlist'} onPress={run(() => toggleDownload(client, 'playlist', item.Id, item.Name, dl))} />}
       <SheetItem icon="queue" label="Add to queue" onPress={run(async () => { const n = await addToQueue(client, await all()); toast('Added to queue', `${n} up next`); })} />
       <SheetItem icon="img" label="Set cover image…" onPress={run(() => pickCover(item.Id).then((ok) => ok && toast('Cover updated')).catch((e) => Alert.alert('Could not set cover', e.message)))} />
       {!!custom && <SheetItem icon="x" label="Remove cover image" onPress={run(() => { clearCover(item.Id); toast('Cover removed'); })} />}
@@ -143,6 +145,7 @@ function PlaylistSheet({ item }: { item: JfItem }) {
 function AlbumSheet({ item }: { item: JfItem }) {
   const client = useAuth((a) => a.client)!;
   const dl = useDownloadedPlaylists().has(dlKey('album', item.Id));
+  const busy = !!useDownloadProgress(dlKey('album', item.Id));
   const tracks = async () => (await client.albumTracks(item.Id)).Items;
   return (
     <>
@@ -150,7 +153,8 @@ function AlbumSheet({ item }: { item: JfItem }) {
       <SheetItem icon="queue" label="Play next" onPress={run(async () => { await playNext(client, await tracks()); toast('Playing next'); })} />
       <SheetItem icon="queue" label="Add to queue" onPress={run(async () => { const n = await addToQueue(client, await tracks()); toast('Added to queue', `${n} up next`); })} />
       <SheetItem icon="plus" label="Add to playlist…" onPress={async () => { const t = await tracks(); openAddToPlaylist(t.map((x) => x.Id), item.Name, item.AlbumArtist, client.imageUrl(item.Id, 160)); }} />
-      <SheetItem icon="dl" label={dl ? 'Remove download' : 'Download album'} onPress={run(() => toggleDownload(client, 'album', item.Id, item.Name, dl))} />
+      {busy ? <SheetItem icon="x" label="Cancel download" onPress={run(() => confirmCancel(dlKey('album', item.Id)))} />
+        : <SheetItem icon="dl" label={dl ? 'Remove download' : 'Download album'} onPress={run(() => toggleDownload(client, 'album', item.Id, item.Name, dl))} />}
     </>
   );
 }

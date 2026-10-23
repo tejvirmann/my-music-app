@@ -2,7 +2,7 @@ import { Alert } from 'react-native';
 
 import type { JellyfinClient } from './api/jellyfin';
 import type { JfItem } from './api/types';
-import { downloadPlaylist, removePlaylistDownload } from './downloads';
+import { cancelDownload, downloadPlaylist, removePlaylistDownload } from './downloads';
 import { toast } from './ui/toast';
 
 export type DlKind = 'playlist' | 'album' | 'song';
@@ -21,6 +21,12 @@ export function toggleDownload(client: JellyfinClient, kind: DlKind, id: string,
   }
   const items = kind === 'song' && song ? Promise.resolve([song]) : kind === 'album' ? client.albumTracks(id).then((r) => r.Items) : client.playlistTracks(id).then((r) => r.Items);
   toast('Downloading…', name);
-  items.then((list) => downloadPlaylist(client, key, list, undefined, { kind, name })).then(() => toast('Downloaded', name))
+  items.then((list) => downloadPlaylist(client, key, list, undefined, { kind, name })).then((r) => toast(r === 'cancelled' ? 'Download cancelled' : 'Downloaded', name))
     .catch((e: any) => Alert.alert('Download failed', e.message));
 }
+
+export const confirmCancel = (key: string) =>
+  Alert.alert('Cancel download?', 'Songs already saved are kept only if this playlist was downloaded before.', [
+    { text: 'Keep downloading', style: 'cancel' },
+    { text: 'Cancel download', style: 'destructive', onPress: () => cancelDownload(key) },
+  ]);

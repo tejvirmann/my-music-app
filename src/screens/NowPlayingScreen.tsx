@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Animated, Easing, Pressable, View, useWindowDimensions } from 'react-native';
 import { PanGestureHandler, State as GState } from 'react-native-gesture-handler';
@@ -10,8 +11,10 @@ import { openAfterDismiss } from '../navigation/ref';
 import { skipNext, skipPrev, useIsPlaying } from '../player/controls';
 import { cycleRepeat, setShuffle, trackToItem, usePlayer } from '../player/queue';
 import { useAuth } from '../state/auth';
+import { useSettings } from '../state/settings';
 import { Art } from '../ui/Art';
 import { Icon } from '../ui/Icon';
+import { Tint, useArtTint } from '../ui/Tint';
 import { IconBtn, fmt } from '../ui/layout';
 import { openSongMenu } from '../ui/sheets';
 import { ToggleBtn } from '../ui/ToggleBtn';
@@ -21,55 +24,100 @@ import { toast } from '../ui/toast';
 
 const GAP = 12;
 
-/** Artwork rail: previous · current · next. Native-driven drag, so it tracks the finger at 60fps. */
-function Carousel({ size }: { size: number }) {
+export interface SlideCtl { go(dir: 'next' | 'prev'): void }
+
+/**
+ * Artwork rail: previous · current · next. Native-driven, so it tracks the finger and the buttons at 60fps.
+ * The rail keeps showing the old track until the slide has finished, then re-centres in the same frame the new track is committed, so a
+ * slow or early track-changed event can never make the art jump mid-slide.
+ */
+function Carousel({ size, ctl }: { size: number; ctl: { current: SlideCtl | null } }) {
   const client = useAuth((a) => a.client)!;
   const { tracks, index } = usePlayer();
   const x = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const step = size + GAP;
-  const busy = useRef(false);
+  const [shown, setShown] = useState(index);
+  const sliding = useRef(false);
+  const indexRef = useRef(index);
+  indexRef.current = index;
   const art = (i: number) => { const t = tracks[i]; return t ? client.imageUrl(String((t as any).albumId ?? t.id), 640) : undefined; };
   const hasPrev = index > 0, hasNext = index >= 0 && index < tracks.length - 1;
   const lim = useRef({ hasPrev, hasNext });
   lim.current = { hasPrev, hasNext };
 
-  // New active track => rail is already showing it; snap back to centre before paint.
-  useLayoutEffect(() => { x.setValue(0); busy.current = false; }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Track changed from outside a slide (song ended, queue tap): swap straight away. Mid-slide, the slide's own finish does it.
+  useEffect(() => { if (!sliding.current) setShown(index); }, [index]);
+  // The rail now shows `shown` in the middle: park the translation at 0 before paint.
+  useLayoutEffect(() => { x.setValue(0); }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const slide = (next: boolean, run: () => Promise<void>) => {
+    if (sliding.current) return;
+    sliding.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    run().catch(() => {});
+    Animated.spring(x, { toValue: next ? -step : step, stiffness: 230, damping: 30, mass: 1, overshootClamping: true, useNativeDriver: true }).start(() => {
+      // Wait (briefly) for the player to report the new track; if it never does, ease back.
+      const t0 = Date.now();
+      const settle = () => {
+        if (indexRef.current !== shown) { sliding.current = false; setShown(indexRef.current); return; }
+        if (Date.now() - t0 > 1200) { sliding.current = false; Animated.spring(x, { toValue: 0, stiffness: 230, damping: 30, mass: 1, useNativeDriver: true }).start(); return; }
+        setTimeout(settle, 40);
+      };
+      settle();
+    });
+  };
+  ctl.current = {
+    go: (dir) => {
+      if (dir === 'next') { if (lim.current.hasNext) slide(true, skipNext); else skipNext().catch(() => {}); return; }
+      TrackPlayer.getProgress().then(({ position }) => {
+        if (lim.current.hasPrev && position <= 3) slide(false, () => skipPrev()); else skipPrev().catch(() => {});
+      }).catch(() => {});
+    },
+  };
 
   const onGesture = useRef(Animated.event([{ nativeEvent: { translationX: x } }], { useNativeDriver: true })).current;
   const onState = (e: any) => {
     const { oldState, translationX: dx, velocityX: vx } = e.nativeEvent;
-    if (oldState !== GState.ACTIVE || busy.current) return;
+    if (oldState !== GState.ACTIVE || sliding.current) return;
     const next = (dx < -step * 0.28 || vx < -600) && dx < 0 && lim.current.hasNext;
     const prev = (dx > step * 0.28 || vx > 600) && dx > 0 && lim.current.hasPrev;
-    if (!next && !prev) { Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start(); return; }
-    busy.current = true;
-    (next ? skipNext() : skipPrev(true)).catch(() => {});
-    Animated.timing(x, { toValue: next ? -step : step, duration: 170, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-    setTimeout(() => { x.setValue(0); busy.current = false; }, 1200); // safety if the track-changed event never arrives
+    if (!next && !prev) { Animated.spring(x, { toValue: 0, stiffness: 260, damping: 28, mass: 1, useNativeDriver: true }).start(); return; }
+    slide(next, () => (next ? skipNext() : skipPrev(true)));
   };
 
-  const tx = x.interpolate({ inputRange: [-step, 0, step], outputRange: [hasNext ? -step : -step * 0.25, 0, hasPrev ? step : step * 0.25], extrapolate: 'clamp' });
+  const hp = shown > 0, hn = shown >= 0 && shown < tracks.length - 1;
+  const tx = x.interpolate({ inputRange: [-step, 0, step], outputRange: [hn ? -step : -step * 0.25, 0, hp ? step : step * 0.25], extrapolate: 'clamp' });
   const near = x.interpolate({ inputRange: [-step, 0, step], outputRange: [1, 0, 1], extrapolate: 'clamp' });
   const slot = (i: number, cur?: boolean) => {
-    const k = cur ? near : near.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
-    const isNext = i > index;
+    const isNext = i > shown;
     // current fades out/shrinks; the neighbour being pulled in grows to full.
     const grow = cur ? null : x.interpolate({ inputRange: isNext ? [-step, 0] : [0, step], outputRange: isNext ? [1, 0] : [0, 1], extrapolate: 'clamp' });
-    const scale = cur ? k.interpolate({ inputRange: [0, 1], outputRange: [1, 0.88] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
-    const opacity = cur ? k.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] });
+    const scale = cur ? near.interpolate({ inputRange: [0, 1], outputRange: [1, 0.86] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] });
+    const opacity = cur ? near.interpolate({ inputRange: [0, 1], outputRange: [1, 0.3] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
     return <Animated.View style={{ width: size, opacity, transform: [{ scale }] }}><Art uri={art(i)} size={size} /></Animated.View>;
   };
   return (
     <PanGestureHandler activeOffsetX={[-10, 10]} failOffsetY={[-24, 24]} onGestureEvent={onGesture} onHandlerStateChange={onState}>
       <Animated.View style={{ height: size + 12, overflow: 'hidden' }}>
         <Animated.View style={{ flexDirection: 'row', gap: GAP, position: 'absolute', top: 6, left: (width - size) / 2 - step, transform: [{ translateX: tx }] }}>
-          {slot(index - 1)}{slot(index, true)}{slot(index + 1)}
+          {slot(shown - 1)}{slot(shown, true)}{slot(shown + 1)}
         </Animated.View>
       </Animated.View>
     </PanGestureHandler>
   );
+}
+
+/** Fades and lifts its content in whenever `k` changes (a new song), so text arrives instead of snapping. */
+function Arrive({ k, children, style }: { k: string; children: React.ReactNode; style?: any }) {
+  const v = useRef(new Animated.Value(1)).current;
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    v.setValue(0);
+    Animated.timing(v, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [k]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <Animated.View style={[style, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }]}>{children}</Animated.View>;
 }
 
 /**
@@ -141,6 +189,9 @@ export function NowPlayingScreen({ navigation }: any) {
   const playing = useIsPlaying();
   const id = track ? String(track.id) : '';
   const info = useQuery({ queryKey: ['song', id], queryFn: () => client.item(id), enabled: !!id, staleTime: 10 * 60_000 });
+  const slideCtl = useRef<SlideCtl | null>(null);
+  const artTint = useSettings((s) => s.artTint);
+  const tint = useArtTint(artTint && track ? String((track as any).albumId ?? track.id) : undefined);
   const queued = tracks.filter((t, i) => i > index && t.queued).length;
 
   if (!track) {
@@ -165,6 +216,7 @@ export function NowPlayingScreen({ navigation }: any) {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: Math.max(inset.top, 14), paddingBottom: inset.bottom + 8 }}>
+      <Tint color={tint} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 14 }}>
         <IconBtn name="down" size={28} label="Close" onPress={() => navigation.goBack()} />
         <Pressable disabled={!dest} onPress={() => dest && goTo(dest.screen, dest.params)} style={{ alignItems: 'center', flex: 1 }} accessibilityLabel={dest ? `Open ${dest.params.name}` : undefined}>
@@ -174,18 +226,18 @@ export function NowPlayingScreen({ navigation }: any) {
         <IconBtn name="dots" label="More" onPress={() => openSongMenu(trackToItem(track))} />
       </View>
 
-      <Carousel size={art} />
+      <Carousel size={art} ctl={slideCtl} />
       <Txt v="small" style={{ textAlign: 'center', marginTop: 4 }}>‹ swipe artwork to skip ›</Txt>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16 }}>
-        <View style={{ flex: 1, paddingRight: 12 }}>
+        <Arrive k={id} style={{ flex: 1, paddingRight: 12 }}>
           <Txt v="h2" numberOfLines={2} style={{ fontSize: 30, lineHeight: 32 }}>{track.title}</Txt>
           <Txt v="mute" numberOfLines={1}>
             {artists.map((a, i) => (
               <Txt key={a} v="mute" suppressHighlighting onPress={() => goTo('Artist', { name: a })} style={{ textDecorationLine: 'underline' }}>{a}{i < artists.length - 1 ? ', ' : ''}</Txt>
             ))}
           </Txt>
-        </View>
+        </Arrive>
         <IconBtn name={isLiked ? 'heart' : 'heartO'} size={28} color={isLiked ? c.accent : c.mute} label={isLiked ? 'Unlike' : 'Like'} onPress={like} />
       </View>
 
@@ -193,12 +245,12 @@ export function NowPlayingScreen({ navigation }: any) {
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8 }}>
         <ToggleBtn name="shuf" on={shuffle} label={shuffle ? 'Shuffle on' : 'Shuffle off'} onPress={() => setShuffle(!shuffle).catch(() => {})} />
-        <IconBtn name="prev" size={34} label="Previous" onPress={() => skipPrev().catch(() => {})} />
+        <IconBtn name="prev" size={34} label="Previous" onPress={() => slideCtl.current?.go('prev')} />
         <Pressable onPress={() => (playing ? TrackPlayer.pause() : TrackPlayer.play())} accessibilityLabel={playing ? 'Pause' : 'Play'}
           style={({ pressed }) => ({ width: 66, height: 66, borderRadius: 33, backgroundColor: c.fg, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.94 : 1 }] })}>
           <Icon name={playing ? 'pause' : 'play'} size={32} color={c.bg} />
         </Pressable>
-        <IconBtn name="next" size={34} label="Next" onPress={() => skipNext().catch(() => {})} />
+        <IconBtn name="next" size={34} label="Next" onPress={() => slideCtl.current?.go('next')} />
         <ToggleBtn name="rep" on={repeat !== RepeatMode.Off} badge={repeat === RepeatMode.Track ? '1' : undefined} label={repeat === RepeatMode.Track ? 'Repeat one' : repeat === RepeatMode.Queue ? 'Repeat all' : 'Repeat off'} onPress={() => cycleRepeat().catch(() => {})} />
       </View>
 

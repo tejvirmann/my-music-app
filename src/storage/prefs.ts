@@ -66,3 +66,6 @@ export function getRecentSources(): PlaySource[] {
   try { return JSON.parse(Storage.getItemSync('recentSources') ?? '[]'); } catch { return []; }
 }
 export const setRecentSources = (v: PlaySource[]) => Storage.setItemSync('recentSources', JSON.stringify(v));
+
+export const getArtTint = (): boolean => Storage.getItemSync('artTint') !== '0';
+export const setArtTint = (v: boolean) => Storage.setItemSync('artTint', v ? '1' : '0');

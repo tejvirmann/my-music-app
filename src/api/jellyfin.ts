@@ -188,6 +188,12 @@ export class JellyfinClient {
   }
 
   /** Full metadata for one item (song info screen). */
+  /** Blurhash of an item's cover (its first four digits after the header are the average colour). */
+  async blurhash(id: string) {
+    const it = await this.req<JfItem>(`/Users/${this.s.userId}/Items/${id}`);
+    return Object.values(it.ImageBlurHashes?.Primary ?? {})[0] ?? null;
+  }
+
   item(id: string) {
     const q = new URLSearchParams({ Fields: 'Genres,MediaSources,Path,ProviderIds,ProductionYear,DateCreated' });
     return this.req<JfItem>(`/Users/${this.s.userId}/Items/${id}?${q}`);

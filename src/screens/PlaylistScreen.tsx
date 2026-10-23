@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
-import { toggleDownload } from '../downloadActions';
+import { confirmCancel, toggleDownload } from '../downloadActions';
 import { orLocal, useDownloadedPlaylists, useDownloadedTracks, useDownloadProgress } from '../downloads';
 import { playNow, playShuffled, usePlayer } from '../player/queue';
 import { norm, prep, searchItems } from '../search';
@@ -47,8 +47,8 @@ export function PlaylistScreen({ route, navigation }: any) {
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: 6 }}>
-          <Pressable disabled={!!progress} onPress={() => toggleDownload(client, 'playlist', id, name, isDl && !stale)} hitSlop={8} accessibilityLabel="Download playlist">
-            {progress ? <Txt color={c.ok}>{progress}</Txt> : <Icon name="dl" size={24} color={isDl ? (stale ? c.accent : c.ok) : c.mute} />}
+          <Pressable onPress={() => progress ? confirmCancel(id) : toggleDownload(client, 'playlist', id, name, isDl && !stale)} hitSlop={8} accessibilityLabel={progress ? 'Cancel download' : 'Download playlist'}>
+            {progress ? <Txt color={c.ok}>{progress} ✕</Txt> : <Icon name="dl" size={24} color={isDl ? (stale ? c.accent : c.ok) : c.mute} />}
           </Pressable>
           <IconBtn name="shuf" size={24} color={shuffling ? c.accent : c.mute} label="Shuffle play" onPress={() => playShuffled(client, tracks, name, { kind: 'playlist', id, name })} />
           <IconBtn name="dots" size={24} color={c.mute} label="More" onPress={() => openPlaylistMenu({ Id: id, Name: name, Type: 'Playlist', ChildCount: tracks.length })} />
