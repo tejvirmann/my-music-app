@@ -7,20 +7,20 @@ export function useIsPlaying() {
   return state === State.Playing || (!!playWhenReady && (state === State.Buffering || state === State.Loading));
 }
 
-/** Next/previous keep playing if the player was playing, and wrap around the ends of the queue. */
+/** Next/previous always start playback, and wrap around the ends of the queue. */
 export async function skipNext() {
-  const [playWhenReady, queue, idx] = await Promise.all([TrackPlayer.getPlayWhenReady(), TrackPlayer.getQueue(), TrackPlayer.getActiveTrackIndex()]);
+  const [queue, idx] = await Promise.all([TrackPlayer.getQueue(), TrackPlayer.getActiveTrackIndex()]);
   if (idx == null || idx >= queue.length - 1) await TrackPlayer.skip(0); else await TrackPlayer.skipToNext();
-  if (playWhenReady) await TrackPlayer.play();
+  await TrackPlayer.play(); // skipping always starts playback, like every player
 }
 
 /** `force` (swipe gestures) always goes to the previous song instead of restarting this one. */
 export async function skipPrev(force = false) {
   const [playWhenReady, queue, idx] = await Promise.all([TrackPlayer.getPlayWhenReady(), TrackPlayer.getQueue(), TrackPlayer.getActiveTrackIndex()]);
   const { position } = await TrackPlayer.getProgress();
-  if ((!force && position > 3) || idx == null || idx <= 0) await TrackPlayer.seekTo(0); // like every player: first tap restarts the song
-  else await TrackPlayer.skipToPrevious();
-  if (playWhenReady && queue.length) await TrackPlayer.play();
+  if ((!force && position > 3) || idx == null || idx <= 0) { await TrackPlayer.seekTo(0); if (playWhenReady && queue.length) await TrackPlayer.play(); return; } // like every player: first tap restarts the song
+  await TrackPlayer.skipToPrevious();
+  await TrackPlayer.play();
 }
 
 let recovering = false;

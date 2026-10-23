@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Animated, Easing, Pressable, View, useWindowDimensions } from 'react-native';
 import { PanGestureHandler, State as GState } from 'react-native-gesture-handler';
@@ -24,48 +23,30 @@ import { toast } from '../ui/toast';
 
 const GAP = 12;
 
+/** Artwork rail: previous · current · next. Native-driven drag, so it tracks the finger at 60fps. */
 export interface SlideCtl { go(dir: 'next' | 'prev'): void }
 
-/**
- * Artwork rail: previous · current · next. Native-driven, so it tracks the finger and the buttons at 60fps.
- * The rail keeps showing the old track until the slide has finished, then re-centres in the same frame the new track is committed, so a
- * slow or early track-changed event can never make the art jump mid-slide.
- */
 function Carousel({ size, ctl }: { size: number; ctl: { current: SlideCtl | null } }) {
   const client = useAuth((a) => a.client)!;
   const { tracks, index } = usePlayer();
   const x = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const step = size + GAP;
-  const [shown, setShown] = useState(index);
-  const sliding = useRef(false);
-  const indexRef = useRef(index);
-  indexRef.current = index;
+  const busy = useRef(false);
   const art = (i: number) => { const t = tracks[i]; return t ? client.imageUrl(String((t as any).albumId ?? t.id), 640) : undefined; };
   const hasPrev = index > 0, hasNext = index >= 0 && index < tracks.length - 1;
   const lim = useRef({ hasPrev, hasNext });
   lim.current = { hasPrev, hasNext };
 
-  // Track changed from outside a slide (song ended, queue tap): swap straight away. Mid-slide, the slide's own finish does it.
-  useEffect(() => { if (!sliding.current) setShown(index); }, [index]);
-  // The rail now shows `shown` in the middle: park the translation at 0 before paint.
-  useLayoutEffect(() => { x.setValue(0); }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
+  // New active track => rail is already showing it; snap back to centre before paint.
+  useLayoutEffect(() => { x.setValue(0); busy.current = false; }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const slide = (next: boolean, run: () => Promise<void>) => {
-    if (sliding.current) return;
-    sliding.current = true;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (busy.current) return;
+    busy.current = true;
     run().catch(() => {});
-    Animated.spring(x, { toValue: next ? -step : step, stiffness: 230, damping: 30, mass: 1, overshootClamping: true, useNativeDriver: true }).start(() => {
-      // Wait (briefly) for the player to report the new track; if it never does, ease back.
-      const t0 = Date.now();
-      const settle = () => {
-        if (indexRef.current !== shown) { sliding.current = false; setShown(indexRef.current); return; }
-        if (Date.now() - t0 > 1200) { sliding.current = false; Animated.spring(x, { toValue: 0, stiffness: 230, damping: 30, mass: 1, useNativeDriver: true }).start(); return; }
-        setTimeout(settle, 40);
-      };
-      settle();
-    });
+    Animated.timing(x, { toValue: next ? -step : step, duration: 170, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    setTimeout(() => { x.setValue(0); busy.current = false; }, 1200); // safety if the track-changed event never arrives
   };
   ctl.current = {
     go: (dir) => {
@@ -79,45 +60,33 @@ function Carousel({ size, ctl }: { size: number; ctl: { current: SlideCtl | null
   const onGesture = useRef(Animated.event([{ nativeEvent: { translationX: x } }], { useNativeDriver: true })).current;
   const onState = (e: any) => {
     const { oldState, translationX: dx, velocityX: vx } = e.nativeEvent;
-    if (oldState !== GState.ACTIVE || sliding.current) return;
+    if (oldState !== GState.ACTIVE || busy.current) return;
     const next = (dx < -step * 0.28 || vx < -600) && dx < 0 && lim.current.hasNext;
     const prev = (dx > step * 0.28 || vx > 600) && dx > 0 && lim.current.hasPrev;
-    if (!next && !prev) { Animated.spring(x, { toValue: 0, stiffness: 260, damping: 28, mass: 1, useNativeDriver: true }).start(); return; }
+    if (!next && !prev) { Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start(); return; }
     slide(next, () => (next ? skipNext() : skipPrev(true)));
   };
 
-  const hp = shown > 0, hn = shown >= 0 && shown < tracks.length - 1;
-  const tx = x.interpolate({ inputRange: [-step, 0, step], outputRange: [hn ? -step : -step * 0.25, 0, hp ? step : step * 0.25], extrapolate: 'clamp' });
+  const tx = x.interpolate({ inputRange: [-step, 0, step], outputRange: [hasNext ? -step : -step * 0.25, 0, hasPrev ? step : step * 0.25], extrapolate: 'clamp' });
   const near = x.interpolate({ inputRange: [-step, 0, step], outputRange: [1, 0, 1], extrapolate: 'clamp' });
   const slot = (i: number, cur?: boolean) => {
-    const isNext = i > shown;
+    const k = cur ? near : near.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+    const isNext = i > index;
     // current fades out/shrinks; the neighbour being pulled in grows to full.
     const grow = cur ? null : x.interpolate({ inputRange: isNext ? [-step, 0] : [0, step], outputRange: isNext ? [1, 0] : [0, 1], extrapolate: 'clamp' });
-    const scale = cur ? near.interpolate({ inputRange: [0, 1], outputRange: [1, 0.86] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] });
-    const opacity = cur ? near.interpolate({ inputRange: [0, 1], outputRange: [1, 0.3] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
+    const scale = cur ? k.interpolate({ inputRange: [0, 1], outputRange: [1, 0.88] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
+    const opacity = cur ? k.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] }) : grow!.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] });
     return <Animated.View style={{ width: size, opacity, transform: [{ scale }] }}><Art uri={art(i)} size={size} /></Animated.View>;
   };
   return (
     <PanGestureHandler activeOffsetX={[-10, 10]} failOffsetY={[-24, 24]} onGestureEvent={onGesture} onHandlerStateChange={onState}>
       <Animated.View style={{ height: size + 12, overflow: 'hidden' }}>
         <Animated.View style={{ flexDirection: 'row', gap: GAP, position: 'absolute', top: 6, left: (width - size) / 2 - step, transform: [{ translateX: tx }] }}>
-          {slot(shown - 1)}{slot(shown, true)}{slot(shown + 1)}
+          {slot(index - 1)}{slot(index, true)}{slot(index + 1)}
         </Animated.View>
       </Animated.View>
     </PanGestureHandler>
   );
-}
-
-/** Fades and lifts its content in whenever `k` changes (a new song), so text arrives instead of snapping. */
-function Arrive({ k, children, style }: { k: string; children: React.ReactNode; style?: any }) {
-  const v = useRef(new Animated.Value(1)).current;
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    v.setValue(0);
-    Animated.timing(v, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-  }, [k]); // eslint-disable-line react-hooks/exhaustive-deps
-  return <Animated.View style={[style, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }]}>{children}</Animated.View>;
 }
 
 /**
@@ -230,14 +199,14 @@ export function NowPlayingScreen({ navigation }: any) {
       <Txt v="small" style={{ textAlign: 'center', marginTop: 4 }}>‹ swipe artwork to skip ›</Txt>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16 }}>
-        <Arrive k={id} style={{ flex: 1, paddingRight: 12 }}>
+        <View style={{ flex: 1, paddingRight: 12 }}>
           <Txt v="h2" numberOfLines={2} style={{ fontSize: 30, lineHeight: 32 }}>{track.title}</Txt>
           <Txt v="mute" numberOfLines={1}>
             {artists.map((a, i) => (
               <Txt key={a} v="mute" suppressHighlighting onPress={() => goTo('Artist', { name: a })} style={{ textDecorationLine: 'underline' }}>{a}{i < artists.length - 1 ? ', ' : ''}</Txt>
             ))}
           </Txt>
-        </Arrive>
+        </View>
         <IconBtn name={isLiked ? 'heart' : 'heartO'} size={28} color={isLiked ? c.accent : c.mute} label={isLiked ? 'Unlike' : 'Like'} onPress={like} />
       </View>
 

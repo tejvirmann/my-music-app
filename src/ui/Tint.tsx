@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import { useRef } from 'react';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { useAuth } from '../state/auth';
@@ -53,22 +53,9 @@ function Wash({ color }: { color: string }) {
   );
 }
 
-/** Full-screen backdrop that eases from one cover colour to the next instead of cutting. */
+/** Full-screen backdrop. Keeps the last colour until the next cover's colour is known, so it never flashes to plain between songs. */
 export function Tint({ color }: { color?: string }) {
-  const [layers, setLayers] = useState<{ under?: string; over?: string }>({ over: color });
-  const fade = useRef(new Animated.Value(1)).current;
-  const cur = useRef(color);
-  useEffect(() => {
-    if (cur.current === color) return;
-    setLayers({ under: cur.current, over: color });
-    cur.current = color;
-    fade.setValue(0);
-    Animated.timing(fade, { toValue: 1, duration: 700, useNativeDriver: true }).start(({ finished }) => { if (finished) setLayers({ over: color }); });
-  }, [color]); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <>
-      {layers.under && <Animated.View pointerEvents="none" style={StyleSheet.absoluteFill}><Wash color={layers.under} /></Animated.View>}
-      {layers.over && <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: fade }]}><Wash color={layers.over} /></Animated.View>}
-    </>
-  );
+  const last = useRef(color);
+  if (color) last.current = color;
+  return last.current ? <View pointerEvents="none" style={StyleSheet.absoluteFill}><Wash color={last.current} /></View> : null;
 }
